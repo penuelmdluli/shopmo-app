@@ -1,5 +1,11 @@
+import type { Metadata } from "next";
 import { Suspense } from "react";
 import { CheckoutSuccessContent } from "@/components/checkout/checkout-success-content";
+
+export const metadata: Metadata = {
+  title: "Order Confirmed",
+  description: "Your ShopMO order has been placed successfully. View your order details and tracking information.",
+};
 
 export default function CheckoutSuccessPage() {
   return (

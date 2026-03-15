@@ -165,18 +165,70 @@ export function ChatWidget() {
     }
   };
 
-  // Parse markdown-like links in messages
+  // Parse markdown-like formatting safely (no dangerouslySetInnerHTML)
   const renderMessage = (content: string) => {
-    // Convert **bold** to <strong>
-    let html = content.replace(/\*\*(.+?)\*\*/g, "<strong>$1</strong>");
-    // Convert [text](url) to <a>
-    html = html.replace(
-      /\[([^\]]+)\]\(([^)]+)\)/g,
-      '<a href="$2" class="text-primary underline hover:text-primary/80 font-medium" target="_self">$1</a>'
+    // Split by newlines first
+    const lines = content.split("\n");
+    return (
+      <span>
+        {lines.map((line, lineIdx) => {
+          // Parse bold and links within each line
+          const parts: React.ReactNode[] = [];
+          let remaining = line;
+          let partKey = 0;
+
+          while (remaining.length > 0) {
+            // Check for bold **text**
+            const boldMatch = remaining.match(/\*\*(.+?)\*\*/);
+            // Check for link [text](url)
+            const linkMatch = remaining.match(/\[([^\]]+)\]\(([^)]+)\)/);
+
+            // Find which comes first
+            const boldIdx = boldMatch ? remaining.indexOf(boldMatch[0]) : Infinity;
+            const linkIdx = linkMatch ? remaining.indexOf(linkMatch[0]) : Infinity;
+
+            if (boldIdx === Infinity && linkIdx === Infinity) {
+              // No more special formatting
+              parts.push(<span key={partKey++}>{remaining}</span>);
+              break;
+            }
+
+            if (boldIdx <= linkIdx && boldMatch) {
+              // Bold comes first
+              if (boldIdx > 0) {
+                parts.push(<span key={partKey++}>{remaining.slice(0, boldIdx)}</span>);
+              }
+              parts.push(<strong key={partKey++}>{boldMatch[1]}</strong>);
+              remaining = remaining.slice(boldIdx + boldMatch[0].length);
+            } else if (linkMatch) {
+              // Link comes first — only allow safe relative URLs
+              if (linkIdx > 0) {
+                parts.push(<span key={partKey++}>{remaining.slice(0, linkIdx)}</span>);
+              }
+              const href = linkMatch[2];
+              const isSafe = href.startsWith("/") || href.startsWith("https://shopmo");
+              if (isSafe) {
+                parts.push(
+                  <a key={partKey++} href={href} className="text-primary underline hover:text-primary/80 font-medium">
+                    {linkMatch[1]}
+                  </a>
+                );
+              } else {
+                parts.push(<span key={partKey++}>{linkMatch[1]}</span>);
+              }
+              remaining = remaining.slice(linkIdx + linkMatch[0].length);
+            }
+          }
+
+          return (
+            <span key={lineIdx}>
+              {lineIdx > 0 && <br />}
+              {parts}
+            </span>
+          );
+        })}
+      </span>
     );
-    // Convert newlines
-    html = html.replace(/\n/g, "<br />");
-    return <span dangerouslySetInnerHTML={{ __html: html }} />;
   };
 
   if (!mounted) return null;

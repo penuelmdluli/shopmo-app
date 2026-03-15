@@ -1,12 +1,37 @@
 "use client";
 
 import { useSearchParams } from "next/navigation";
+import { useEffect } from "react";
 import Link from "next/link";
 import { CheckCircle, Package, ShoppingBag } from "lucide-react";
+import { useCart } from "@/components/providers/providers";
+import { trackPurchase } from "@/lib/facebook-pixel";
 
 export function CheckoutSuccessContent() {
   const searchParams = useSearchParams();
   const orderNumber = searchParams.get("order") || "SM-00000000-XXXXX";
+  const { clearCart } = useCart();
+
+  // Clear cart ONLY on successful payment confirmation
+  useEffect(() => {
+    clearCart();
+    // Track purchase event
+    try {
+      const pendingOrder = sessionStorage.getItem("shopmo_pending_order");
+      if (pendingOrder) {
+        const order = JSON.parse(pendingOrder);
+        trackPurchase({
+          content_ids: order.items?.map((_: unknown, i: number) => `item-${i}`) || [],
+          content_type: "product",
+          num_items: order.items?.length || 1,
+          value: order.total || 0,
+        });
+        sessionStorage.removeItem("shopmo_pending_order");
+      }
+    } catch {
+      // Silently handle
+    }
+  }, []); // eslint-disable-line react-hooks/exhaustive-deps
 
   return (
     <div className="max-w-lg mx-auto px-4 py-16 text-center">

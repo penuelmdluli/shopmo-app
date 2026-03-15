@@ -1,3 +1,10 @@
+import type { Metadata } from "next";
+
+export const metadata: Metadata = {
+  title: "Terms of Service",
+  description: "ShopMO's terms of service. Read about orders, pricing, shipping, returns, payments, and your rights.",
+};
+
 export default function TermsPage() {
   return (
     <div className="max-w-3xl mx-auto px-4 py-8 lg:py-12">

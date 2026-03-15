@@ -1,4 +1,10 @@
+import type { Metadata } from "next";
 import { Package, Target, Eye, Users, Zap, Shield, Heart } from "lucide-react";
+
+export const metadata: Metadata = {
+  title: "About Us",
+  description: "Learn about ShopMO, South Africa's smartest online store. Our mission, vision, and values driving AI-powered e-commerce.",
+};
 
 export default function AboutPage() {
   return (

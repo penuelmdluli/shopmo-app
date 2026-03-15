@@ -1,5 +1,11 @@
+import type { Metadata } from "next";
 import Link from "next/link";
 import { Search, Package, RotateCcw, CreditCard, User, Mail, Phone } from "lucide-react";
+
+export const metadata: Metadata = {
+  title: "Help Centre",
+  description: "Get help with your ShopMO orders, deliveries, returns, payments, and account. Contact our support team.",
+};
 
 const helpCategories = [
   {

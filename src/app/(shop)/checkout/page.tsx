@@ -35,10 +35,10 @@ const SHIPPING_OPTIONS = [
 ];
 
 const PAYMENT_OPTIONS = [
-  { id: "payfast_card", name: "Credit/Debit Card", provider: "PayFast", icon: CreditCard, description: "Visa, Mastercard, Amex" },
-  { id: "payfast_eft", name: "EFT Payment", provider: "PayFast", icon: Building2, description: "Bank transfer via PayFast" },
-  { id: "ozow", name: "Instant EFT", provider: "Ozow", icon: Zap, description: "Pay instantly from your bank" },
-  { id: "snapscan", name: "SnapScan", provider: "PayFast", icon: QrCode, description: "Scan to pay with SnapScan" },
+  { id: "yoco_card", name: "Credit/Debit Card", provider: "Yoco", icon: CreditCard, description: "Visa, Mastercard, Amex" },
+  { id: "yoco_eft", name: "EFT Payment", provider: "Yoco", icon: Building2, description: "Bank transfer via Yoco" },
+  { id: "yoco_apple", name: "Apple Pay", provider: "Yoco", icon: Zap, description: "Pay with Apple Pay" },
+  { id: "snapscan", name: "SnapScan", provider: "Yoco", icon: QrCode, description: "Scan to pay with SnapScan" },
 ];
 
 export default function CheckoutPage() {
@@ -130,7 +130,13 @@ export default function CheckoutPage() {
       const data = await res.json();
 
       if (data.redirectUrl) {
-        clearCart();
+        // Save order details for success page — DON'T clear cart yet
+        // Cart will be cleared on the success page after payment confirmation
+        sessionStorage.setItem("shopmo_pending_order", JSON.stringify({
+          orderId: orderNumber,
+          total,
+          items: items.map(i => ({ title: i.listing?.title, qty: i.quantity, price: i.unit_price })),
+        }));
         window.location.href = data.redirectUrl;
       } else {
         alert("Payment error. Please try again.");
