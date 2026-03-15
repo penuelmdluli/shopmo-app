@@ -3,6 +3,8 @@
 import { useState, useEffect, useCallback } from "react";
 import Link from "next/link";
 import { X, ShoppingBag, ArrowRight } from "lucide-react";
+import { addSubscriber } from "@/lib/email-marketing";
+import { trackLead } from "@/lib/facebook-pixel";
 
 const STORAGE_KEY = "shopmo_exit_shown";
 
@@ -40,6 +42,11 @@ export function ExitIntentPopup() {
   const handleSubmit = (e: React.FormEvent) => {
     e.preventDefault();
     if (email.trim()) {
+      addSubscriber(email, "exit_intent", {
+        coupon_code: "STAYSHOPMO",
+        tags: ["exit_intent", "10_percent_off"],
+      });
+      trackLead();
       setSubmitted(true);
     }
   };

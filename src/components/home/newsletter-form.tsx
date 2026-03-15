@@ -1,6 +1,8 @@
 "use client";
 
 import { useState } from "react";
+import { addSubscriber } from "@/lib/email-marketing";
+import { trackLead } from "@/lib/facebook-pixel";
 
 export function NewsletterForm() {
   const [email, setEmail] = useState("");
@@ -9,6 +11,8 @@ export function NewsletterForm() {
   const handleSubmit = (e: React.FormEvent) => {
     e.preventDefault();
     if (email.trim()) {
+      addSubscriber(email, "newsletter", { tags: ["footer_signup"] });
+      trackLead();
       setSubmitted(true);
       setEmail("");
     }

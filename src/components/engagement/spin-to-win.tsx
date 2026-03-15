@@ -3,6 +3,8 @@
 import { useState, useEffect, useRef } from "react";
 import Link from "next/link";
 import { X, Gift, PartyPopper } from "lucide-react";
+import { addSubscriber } from "@/lib/email-marketing";
+import { trackLead } from "@/lib/facebook-pixel";
 
 const STORAGE_KEY = "shopmo_spin_used";
 const SPIN_DELAY_KEY = "shopmo_spin_shown_at";
@@ -115,7 +117,14 @@ export function SpinToWin() {
     if (!email.trim() || spinning) return;
 
     setSpinning(true);
+    // Collect email into marketing system
     const winIndex = pickWinningIndex();
+    const wonSegment = SEGMENTS[winIndex];
+    addSubscriber(email, "spin_wheel", {
+      coupon_code: wonSegment.code || "WELCOME5",
+      tags: ["gamification", wonSegment.code ? "winner" : "consolation"],
+    });
+    trackLead();
     const segAngle = 360 / SEGMENTS.length;
     // Calculate rotation: go to winning segment, add extra full rotations
     const targetAngle = 360 - (winIndex * segAngle + segAngle / 2);
