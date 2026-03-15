@@ -1,6 +1,6 @@
 export const SITE_NAME = "ShopMO";
 export const SITE_DESCRIPTION = "South Africa's smartest online store. Trending products, fast delivery, AI-powered shopping.";
-export const SITE_URL = process.env.NEXT_PUBLIC_APP_URL || "https://shopmo.co.za";
+export const SITE_URL = process.env.NEXT_PUBLIC_APP_URL || "https://shopmoo.co.za";
 
 export const CATEGORIES = [
   { name: "Electronics", slug: "electronics", icon: "Smartphone", image: "/images/categories/electronics.jpg" },

@@ -78,8 +78,8 @@ export default function PrivacyPage() {
           <p className="text-gray-600 text-sm leading-relaxed">
             If you have questions about this Privacy Policy or wish to exercise your rights,
             please contact us at{" "}
-            <a href="mailto:support@shopmo.co.za" className="text-primary hover:underline">
-              support@shopmo.co.za
+            <a href="mailto:support@shopmoo.co.za" className="text-primary hover:underline">
+              support@shopmoo.co.za
             </a>.
           </p>
         </section>

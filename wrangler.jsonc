@@ -6,5 +6,9 @@
   "assets": {
     "directory": ".open-next/assets",
     "binding": "ASSETS"
-  }
+  },
+  "routes": [
+    { "pattern": "shopmoo.co.za", "custom_domain": true },
+    { "pattern": "www.shopmoo.co.za", "custom_domain": true }
+  ]
 }

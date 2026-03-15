@@ -80,11 +80,11 @@ export default function HelpPage() {
         </p>
         <div className="flex flex-col sm:flex-row items-center justify-center gap-4">
           <a
-            href="mailto:support@shopmo.co.za"
+            href="mailto:support@shopmoo.co.za"
             className="flex items-center gap-2 px-6 py-3 bg-primary text-white font-medium rounded-lg hover:bg-primary/90 transition-colors"
           >
             <Mail size={18} />
-            support@shopmo.co.za
+            support@shopmoo.co.za
           </a>
           <a
             href="tel:+27792572466"

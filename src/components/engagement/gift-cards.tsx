@@ -93,7 +93,7 @@ export function GiftCardSection() {
             </div>
           </div>
           <p className="text-xs text-gray-400 mt-3 text-center">
-            Gift cards never expire. Redeemable on shopmo.co.za
+            Gift cards never expire. Redeemable on shopmoo.co.za
           </p>
         </div>
 

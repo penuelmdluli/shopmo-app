@@ -98,8 +98,8 @@ export default function TermsPage() {
           <h2 className="text-xl font-semibold text-gray-900 mb-3">10. Contact</h2>
           <p className="text-gray-600 text-sm leading-relaxed">
             For questions about these Terms, please contact us at{" "}
-            <a href="mailto:support@shopmo.co.za" className="text-primary hover:underline">
-              support@shopmo.co.za
+            <a href="mailto:support@shopmoo.co.za" className="text-primary hover:underline">
+              support@shopmoo.co.za
             </a>.
           </p>
         </section>

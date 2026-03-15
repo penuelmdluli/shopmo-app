@@ -2,7 +2,7 @@ import { MetadataRoute } from "next";
 import { MOCK_LISTINGS } from "@/lib/mock-data";
 import { CATEGORIES } from "@/lib/constants";
 
-const SITE_URL = process.env.NEXT_PUBLIC_APP_URL || "https://shopmo-app.gaptogold.workers.dev";
+const SITE_URL = process.env.NEXT_PUBLIC_APP_URL || "https://shopmoo.co.za";
 
 export default function sitemap(): MetadataRoute.Sitemap {
   const now = new Date().toISOString();

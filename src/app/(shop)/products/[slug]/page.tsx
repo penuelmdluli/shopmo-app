@@ -13,7 +13,7 @@ interface ProductPageProps {
   params: Promise<{ slug: string }>;
 }
 
-const SITE_URL = process.env.NEXT_PUBLIC_APP_URL || "https://shopmo-app.gaptogold.workers.dev";
+const SITE_URL = process.env.NEXT_PUBLIC_APP_URL || "https://shopmoo.co.za";
 
 export async function generateMetadata({ params }: ProductPageProps) {
   const { slug } = await params;

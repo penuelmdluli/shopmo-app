@@ -18,7 +18,7 @@ export async function POST(req: NextRequest) {
       });
     }
 
-    const baseUrl = process.env.NEXT_PUBLIC_BASE_URL || "https://shopmo-app.gaptogold.workers.dev";
+    const baseUrl = process.env.NEXT_PUBLIC_BASE_URL || "https://shopmoo.co.za";
 
     const response = await fetch("https://payments.yoco.com/api/checkouts", {
       method: "POST",

@@ -30,11 +30,11 @@ export const metadata: Metadata = {
   openGraph: {
     type: "website",
     locale: "en_ZA",
-    url: "https://shopmo-app.gaptogold.workers.dev",
+    url: "https://shopmoo.co.za",
     siteName: "ShopMO",
     title: "ShopMO - South Africa's Smartest Online Store",
     description: "Shop 32+ trending products. Free delivery over R500. AI shopping assistant. Secure Yoco payments.",
-    images: [{ url: "https://shopmo-app.gaptogold.workers.dev/og-image.png", width: 1200, height: 630, alt: "ShopMO" }],
+    images: [{ url: "https://shopmoo.co.za/og-image.png", width: 1200, height: 630, alt: "ShopMO" }],
   },
   twitter: {
     card: "summary_large_image",

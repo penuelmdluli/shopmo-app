@@ -3,7 +3,7 @@ import { Truck, Zap, RotateCcw, Shield, ArrowRight, Flame, Mail, ChevronRight, P
 import { MOCK_LISTINGS, MOCK_DEALS, MOCK_CATEGORIES } from "@/lib/mock-data";
 import { VALUE_PROPOSITIONS } from "@/lib/constants";
 
-const SITE_URL = process.env.NEXT_PUBLIC_APP_URL || "https://shopmo-app.gaptogold.workers.dev";
+const SITE_URL = process.env.NEXT_PUBLIC_APP_URL || "https://shopmoo.co.za";
 
 function OrganizationJsonLd() {
   const jsonLd = {
