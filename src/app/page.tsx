@@ -2,6 +2,45 @@ import Link from "next/link";
 import { Truck, Zap, RotateCcw, Shield, ArrowRight, Flame, Mail, ChevronRight, Package, Smartphone, Home, Shirt, Heart, Dumbbell, Gamepad2, Car, Flower2 } from "lucide-react";
 import { MOCK_LISTINGS, MOCK_DEALS, MOCK_CATEGORIES } from "@/lib/mock-data";
 import { VALUE_PROPOSITIONS } from "@/lib/constants";
+
+const SITE_URL = process.env.NEXT_PUBLIC_APP_URL || "https://shopmo-app.gaptogold.workers.dev";
+
+function OrganizationJsonLd() {
+  const jsonLd = {
+    "@context": "https://schema.org",
+    "@type": "Organization",
+    name: "ShopMO",
+    url: SITE_URL,
+    logo: `${SITE_URL}/favicon.ico`,
+    description: "South Africa's smartest online store. Trending products, fast delivery, AI-powered shopping.",
+    address: {
+      "@type": "PostalAddress",
+      addressCountry: "ZA",
+      addressRegion: "Gauteng",
+    },
+    sameAs: [],
+  };
+  return (
+    <script type="application/ld+json" dangerouslySetInnerHTML={{ __html: JSON.stringify(jsonLd) }} />
+  );
+}
+
+function WebsiteJsonLd() {
+  const jsonLd = {
+    "@context": "https://schema.org",
+    "@type": "WebSite",
+    name: "ShopMO",
+    url: SITE_URL,
+    potentialAction: {
+      "@type": "SearchAction",
+      target: { "@type": "EntryPoint", urlTemplate: `${SITE_URL}/search?q={search_term_string}` },
+      "query-input": "required name=search_term_string",
+    },
+  };
+  return (
+    <script type="application/ld+json" dangerouslySetInnerHTML={{ __html: JSON.stringify(jsonLd) }} />
+  );
+}
 import { Header } from "@/components/layout/header";
 import { Footer } from "@/components/layout/footer";
 import { MobileNav } from "@/components/layout/mobile-nav";
@@ -31,6 +70,8 @@ export default function HomePage() {
 
   return (
     <>
+      <OrganizationJsonLd />
+      <WebsiteJsonLd />
       <Header />
       <main className="min-h-screen pb-16 lg:pb-0">
         {/* Hero Section */}

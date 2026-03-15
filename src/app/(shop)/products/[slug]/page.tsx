@@ -13,6 +13,8 @@ interface ProductPageProps {
   params: Promise<{ slug: string }>;
 }
 
+const SITE_URL = process.env.NEXT_PUBLIC_APP_URL || "https://shopmo-app.gaptogold.workers.dev";
+
 export async function generateMetadata({ params }: ProductPageProps) {
   const { slug } = await params;
   const listing = MOCK_LISTINGS.find((l) => l.slug === slug);
@@ -20,7 +22,61 @@ export async function generateMetadata({ params }: ProductPageProps) {
   return {
     title: listing.title,
     description: listing.description,
+    openGraph: {
+      title: listing.title,
+      description: listing.description,
+      url: `${SITE_URL}/products/${listing.slug}`,
+      images: listing.images?.[0] ? [{ url: listing.images[0] }] : [],
+      type: "website",
+    },
   };
+}
+
+function ProductJsonLd({ listing }: { listing: (typeof MOCK_LISTINGS)[0] }) {
+  const reviews = MOCK_REVIEWS.filter((r) => r.listing_id === listing.id);
+  const jsonLd = {
+    "@context": "https://schema.org",
+    "@type": "Product",
+    name: listing.title,
+    description: listing.description,
+    image: listing.images,
+    sku: listing.sku,
+    brand: { "@type": "Brand", name: listing.brand || "ShopMO" },
+    offers: {
+      "@type": "Offer",
+      url: `${SITE_URL}/products/${listing.slug}`,
+      priceCurrency: "ZAR",
+      price: listing.current_price,
+      availability: listing.is_in_stock
+        ? "https://schema.org/InStock"
+        : "https://schema.org/OutOfStock",
+      seller: { "@type": "Organization", name: "ShopMO" },
+    },
+    aggregateRating: listing.rating_count > 0
+      ? {
+          "@type": "AggregateRating",
+          ratingValue: listing.rating_average,
+          reviewCount: listing.rating_count,
+          bestRating: 5,
+          worstRating: 1,
+        }
+      : undefined,
+    review: reviews.length > 0
+      ? reviews.slice(0, 5).map((r) => ({
+          "@type": "Review",
+          reviewRating: { "@type": "Rating", ratingValue: r.rating, bestRating: 5 },
+          author: { "@type": "Person", name: r.customer?.full_name || "Customer" },
+          reviewBody: r.body || "",
+        }))
+      : undefined,
+  };
+
+  return (
+    <script
+      type="application/ld+json"
+      dangerouslySetInnerHTML={{ __html: JSON.stringify(jsonLd) }}
+    />
+  );
 }
 
 export default async function ProductPage({ params }: ProductPageProps) {
@@ -40,6 +96,9 @@ export default async function ProductPage({ params }: ProductPageProps) {
 
   return (
     <div className="max-w-7xl mx-auto px-4 py-6">
+      {/* JSON-LD Structured Data for Google */}
+      <ProductJsonLd listing={listing} />
+
       {/* Breadcrumbs */}
       <nav className="flex items-center gap-1 text-sm text-muted-foreground mb-6 flex-wrap">
         <Link href="/" className="hover:text-primary transition-colors">Home</Link>
