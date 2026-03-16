@@ -1,5 +1,6 @@
 import { NextRequest, NextResponse } from "next/server";
 import crypto from "crypto";
+import { createClient } from "@/lib/supabase/server";
 
 export async function POST(req: NextRequest) {
   try {
@@ -31,19 +32,87 @@ export async function POST(req: NextRequest) {
     const event = JSON.parse(rawBody);
     console.log(`[Yoco Webhook] ${event.type}:`, JSON.stringify(event.payload?.metadata));
 
+    const supabase = await createClient();
+
     if (event.type === "payment.succeeded") {
       const { metadata } = event.payload || {};
       const orderId = metadata?.orderId;
+      const paymentId = event.payload?.id;
 
-      // TODO: Update order status in Supabase
-      // await supabase.from("customer_orders").update({ status: "paid", payment_id: event.payload.id }).eq("order_number", orderId);
+      if (orderId) {
+        // Update customer_orders status to paid
+        const { error: orderError } = await supabase
+          .from("customer_orders")
+          .update({
+            status: "paid",
+            payment_status: "paid",
+            payment_reference: paymentId,
+            payment_provider: "yoco",
+            paid_at: new Date().toISOString(),
+          })
+          .eq("order_number", orderId);
 
-      console.log(`[Yoco] Payment succeeded for order ${orderId}`);
+        if (orderError) {
+          console.error("[Yoco] Failed to update customer order:", orderError);
+        } else {
+          console.log(`[Yoco] Order ${orderId} marked as paid`);
+        }
+
+        // Also update SellBot orders table
+        const { error: sellbotError } = await supabase
+          .from("orders")
+          .update({
+            status: "paid",
+            payment_status: "paid",
+          })
+          .eq("platform_order_id", orderId)
+          .eq("platform", "shopmo");
+
+        if (sellbotError) {
+          console.error("[Yoco] Failed to update SellBot order:", sellbotError);
+        }
+
+        // Update order items status
+        const { data: customerOrder } = await supabase
+          .from("customer_orders")
+          .select("id")
+          .eq("order_number", orderId)
+          .single();
+
+        if (customerOrder) {
+          await supabase
+            .from("customer_order_items")
+            .update({ status: "processing" })
+            .eq("customer_order_id", customerOrder.id);
+        }
+      }
     }
 
     if (event.type === "payment.failed") {
       const { metadata } = event.payload || {};
-      console.log(`[Yoco] Payment failed for order ${metadata?.orderId}`);
+      const orderId = metadata?.orderId;
+
+      if (orderId) {
+        await supabase
+          .from("customer_orders")
+          .update({
+            payment_status: "failed",
+            status: "cancelled",
+          })
+          .eq("order_number", orderId);
+
+        // Update SellBot orders too
+        await supabase
+          .from("orders")
+          .update({
+            payment_status: "failed",
+            status: "cancelled",
+          })
+          .eq("platform_order_id", orderId)
+          .eq("platform", "shopmo");
+
+        console.log(`[Yoco] Payment failed for order ${orderId}`);
+      }
     }
 
     return NextResponse.json({ received: true });

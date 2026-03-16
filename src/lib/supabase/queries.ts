@@ -1,5 +1,5 @@
 import { createClient } from "./server";
-import type { StorefrontListing, StorefrontCategory, CustomerReview, Deal } from "@/types/database";
+import type { StorefrontListing, StorefrontCategory, CustomerReview, Deal, CustomerOrder, Coupon } from "@/types/database";
 import { MOCK_LISTINGS, MOCK_CATEGORIES, MOCK_REVIEWS, MOCK_DEALS } from "@/lib/mock-data";
 
 // ============================================
@@ -255,19 +255,126 @@ export async function getDeals(): Promise<Deal[]> {
     const now = new Date().toISOString();
     const { data, error } = await supabase
       .from("deals")
-      .select("*, listing:storefront_listings(*)")
+      .select("*")
       .eq("is_active", true)
       .gte("ends_at", now)
       .lte("starts_at", now)
       .order("priority", { ascending: false });
 
     if (!error && data && data.length > 0) {
-      return data as Deal[];
+      // Enrich deals with listing data from our getListings()
+      const allListings = await getListings();
+      return data.map((deal: Record<string, unknown>) => {
+        const listing = allListings.find((l) => l.id === deal.listing_id);
+        return {
+          ...deal,
+          listing: listing || null,
+        } as Deal;
+      });
     }
 
     return MOCK_DEALS;
   } catch {
     return MOCK_DEALS;
+  }
+}
+
+// ============================================
+// Order Queries
+// ============================================
+
+/**
+ * Get all ShopMO customer orders (for SellBot dashboard sync).
+ */
+export async function getCustomerOrders(limit = 50): Promise<CustomerOrder[]> {
+  try {
+    const supabase = await createClient();
+    const { data, error } = await supabase
+      .from("customer_orders")
+      .select("*, items:customer_order_items(*)")
+      .order("created_at", { ascending: false })
+      .limit(limit);
+
+    if (!error && data) {
+      return data as CustomerOrder[];
+    }
+    return [];
+  } catch {
+    return [];
+  }
+}
+
+/**
+ * Get a single order by order number.
+ */
+export async function getOrderByNumber(orderNumber: string): Promise<CustomerOrder | null> {
+  try {
+    const supabase = await createClient();
+    const { data, error } = await supabase
+      .from("customer_orders")
+      .select("*, items:customer_order_items(*)")
+      .eq("order_number", orderNumber)
+      .single();
+
+    if (!error && data) {
+      return data as CustomerOrder;
+    }
+    return null;
+  } catch {
+    return null;
+  }
+}
+
+/**
+ * Validate a coupon code against the database.
+ */
+export async function validateCoupon(code: string, subtotal: number): Promise<{ valid: boolean; coupon?: Coupon; discount?: number; reason?: string }> {
+  try {
+    const supabase = await createClient();
+    const { data: coupon, error } = await supabase
+      .from("coupons")
+      .select("*")
+      .eq("code", code.toUpperCase())
+      .eq("is_active", true)
+      .single();
+
+    if (error || !coupon) {
+      return { valid: false, reason: "Invalid coupon code" };
+    }
+
+    const now = new Date();
+    if (coupon.valid_until && now > new Date(coupon.valid_until)) {
+      return { valid: false, reason: "Coupon has expired" };
+    }
+    if (coupon.valid_from && now < new Date(coupon.valid_from)) {
+      return { valid: false, reason: "Coupon is not yet active" };
+    }
+    if (coupon.usage_limit && coupon.usage_count >= coupon.usage_limit) {
+      return { valid: false, reason: "Coupon usage limit reached" };
+    }
+    if (subtotal < (coupon.min_order_amount || 0)) {
+      return { valid: false, reason: `Minimum order amount is R${coupon.min_order_amount}` };
+    }
+
+    let discount = 0;
+    switch (coupon.discount_type) {
+      case "percentage":
+        discount = subtotal * (coupon.discount_value / 100);
+        if (coupon.max_discount_amount) {
+          discount = Math.min(discount, coupon.max_discount_amount);
+        }
+        break;
+      case "fixed_amount":
+        discount = coupon.discount_value;
+        break;
+      case "free_shipping":
+        discount = 0; // Handled at checkout
+        break;
+    }
+
+    return { valid: true, coupon: coupon as Coupon, discount: Math.round(discount * 100) / 100 };
+  } catch {
+    return { valid: false, reason: "Error validating coupon" };
   }
 }
 
