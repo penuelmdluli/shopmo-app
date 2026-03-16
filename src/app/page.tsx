@@ -1,6 +1,6 @@
 import Link from "next/link";
 import { Truck, Zap, RotateCcw, Shield, ArrowRight, Flame, Mail, ChevronRight, Package, Smartphone, Home, Shirt, Heart, Dumbbell, Gamepad2, Car, Flower2 } from "lucide-react";
-import { MOCK_LISTINGS, MOCK_DEALS, MOCK_CATEGORIES } from "@/lib/mock-data";
+import { getListings, getCategories, getDeals } from "@/lib/supabase/queries";
 import { VALUE_PROPOSITIONS } from "@/lib/constants";
 
 const SITE_URL = process.env.NEXT_PUBLIC_APP_URL || "https://shopmoo.co.za";
@@ -64,9 +64,14 @@ const CATEGORY_COLORS = [
   "bg-yellow-50 text-yellow-700",
 ];
 
-export default function HomePage() {
-  const trendingProducts = MOCK_LISTINGS.slice(0, 8);
-  const newArrivals = MOCK_LISTINGS.slice(-4);
+export default async function HomePage() {
+  const [allListings, categories, deals] = await Promise.all([
+    getListings(),
+    getCategories(),
+    getDeals(),
+  ]);
+  const trendingProducts = allListings.slice(0, 8);
+  const newArrivals = allListings.slice(-4);
 
   return (
     <>
@@ -161,7 +166,7 @@ export default function HomePage() {
         <section className="max-w-7xl mx-auto px-4 py-8">
           <h2 className="text-2xl font-bold text-foreground mb-6">Shop by Category</h2>
           <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
-            {MOCK_CATEGORIES.map((cat, i) => {
+            {categories.map((cat, i) => {
               const Icon = ICON_MAP[cat.icon_name || "Package"] || Package;
               return (
                 <Link
@@ -185,7 +190,7 @@ export default function HomePage() {
               <Flame size={24} className="text-secondary" />
               <h2 className="text-2xl font-bold text-foreground">Flash Deals</h2>
             </div>
-            <DealsSection deals={MOCK_DEALS} />
+            <DealsSection deals={deals} />
           </div>
         </section>
 

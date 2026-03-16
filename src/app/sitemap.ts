@@ -1,11 +1,14 @@
 import { MetadataRoute } from "next";
-import { MOCK_LISTINGS } from "@/lib/mock-data";
-import { CATEGORIES } from "@/lib/constants";
+import { getListings, getCategories } from "@/lib/supabase/queries";
 
 const SITE_URL = process.env.NEXT_PUBLIC_APP_URL || "https://shopmoo.co.za";
 
-export default function sitemap(): MetadataRoute.Sitemap {
+export default async function sitemap(): Promise<MetadataRoute.Sitemap> {
   const now = new Date().toISOString();
+  const [listings, categories] = await Promise.all([
+    getListings(),
+    getCategories(),
+  ]);
 
   // Static pages
   const staticPages: MetadataRoute.Sitemap = [
@@ -23,7 +26,7 @@ export default function sitemap(): MetadataRoute.Sitemap {
   ];
 
   // Product pages
-  const productPages: MetadataRoute.Sitemap = MOCK_LISTINGS.map((listing) => ({
+  const productPages: MetadataRoute.Sitemap = listings.map((listing) => ({
     url: `${SITE_URL}/products/${listing.slug}`,
     lastModified: listing.updated_at || now,
     changeFrequency: "daily" as const,
@@ -31,7 +34,7 @@ export default function sitemap(): MetadataRoute.Sitemap {
   }));
 
   // Category pages
-  const categoryPages: MetadataRoute.Sitemap = CATEGORIES.map((cat) => ({
+  const categoryPages: MetadataRoute.Sitemap = categories.map((cat) => ({
     url: `${SITE_URL}/categories/${cat.slug}`,
     lastModified: now,
     changeFrequency: "weekly" as const,

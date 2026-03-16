@@ -1,5 +1,5 @@
 import { NextResponse } from "next/server";
-import { MOCK_LISTINGS } from "@/lib/mock-data";
+import { getListings } from "@/lib/supabase/queries";
 
 // API endpoint for SellBot to fetch ShopMO product catalog
 // SellBot calls this to stay in sync with what ShopMO is selling
@@ -11,7 +11,7 @@ export async function GET(request: Request) {
   const inStock = searchParams.get("in_stock");
   const updatedSince = searchParams.get("updated_since");
 
-  let products = [...MOCK_LISTINGS];
+  let products = await getListings();
 
   // Filter by category
   if (category) {

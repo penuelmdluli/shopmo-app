@@ -1,5 +1,5 @@
 import { NextRequest, NextResponse } from "next/server";
-import { MOCK_LISTINGS } from "@/lib/mock-data";
+import { searchListings } from "@/lib/supabase/queries";
 
 export async function GET(request: NextRequest) {
   const { searchParams } = new URL(request.url);
@@ -12,25 +12,10 @@ export async function GET(request: NextRequest) {
     );
   }
 
-  const query = q.toLowerCase().trim();
-  const terms = query.split(/\s+/);
-
-  const results = MOCK_LISTINGS.filter((listing) => {
-    const searchable = [
-      listing.title,
-      listing.description,
-      listing.category,
-      ...listing.tags,
-      listing.brand || "",
-      listing.sku,
-    ]
-      .join(" ")
-      .toLowerCase();
-
-    return terms.every((term) => searchable.includes(term));
-  });
+  const results = await searchListings(q.trim());
 
   // Sort by relevance: exact title match first, then by rating
+  const query = q.toLowerCase().trim();
   results.sort((a, b) => {
     const aTitle = a.title.toLowerCase().includes(query) ? 1 : 0;
     const bTitle = b.title.toLowerCase().includes(query) ? 1 : 0;

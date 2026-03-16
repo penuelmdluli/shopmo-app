@@ -1,6 +1,6 @@
 import { NextRequest, NextResponse } from "next/server";
 import { z } from "zod";
-import { MOCK_REVIEWS } from "@/lib/mock-data";
+import { getReviews } from "@/lib/supabase/queries";
 
 const createReviewSchema = z.object({
   listing_id: z.string().min(1, "listing_id is required"),
@@ -22,7 +22,7 @@ export async function GET(request: NextRequest) {
     );
   }
 
-  const reviews = MOCK_REVIEWS.filter((r) => r.listing_id === listing_id);
+  const reviews = await getReviews(listing_id);
 
   const totalRatings = reviews.reduce((sum, r) => sum + r.rating, 0);
   const averageRating = reviews.length > 0 ? totalRatings / reviews.length : 0;

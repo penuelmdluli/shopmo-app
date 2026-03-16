@@ -1,6 +1,6 @@
 import Link from "next/link";
 import { ChevronRight } from "lucide-react";
-import { MOCK_LISTINGS, MOCK_CATEGORIES } from "@/lib/mock-data";
+import { getListings, getCategories } from "@/lib/supabase/queries";
 import { ProductGrid } from "@/components/product/product-grid";
 import { ProductsFilterBar } from "@/components/products/products-filter-bar";
 
@@ -9,7 +9,12 @@ export const metadata = {
   description: "Browse our full product catalogue. Trending electronics, home goods, fashion and more.",
 };
 
-export default function ProductsPage() {
+export default async function ProductsPage() {
+  const [listings, categories] = await Promise.all([
+    getListings(),
+    getCategories(),
+  ]);
+
   return (
     <div className="max-w-7xl mx-auto px-4 py-6">
       {/* Breadcrumbs */}
@@ -23,7 +28,7 @@ export default function ProductsPage() {
       <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4 mb-6">
         <div>
           <h1 className="text-2xl font-bold text-foreground">All Products</h1>
-          <p className="text-sm text-muted-foreground mt-1">{MOCK_LISTINGS.length} products found</p>
+          <p className="text-sm text-muted-foreground mt-1">{listings.length} products found</p>
         </div>
       </div>
 
@@ -35,7 +40,7 @@ export default function ProductsPage() {
         >
           All
         </Link>
-        {MOCK_CATEGORIES.map((cat) => (
+        {categories.map((cat) => (
           <Link
             key={cat.id}
             href={`/categories/${cat.slug}`}
@@ -50,7 +55,7 @@ export default function ProductsPage() {
       <ProductsFilterBar />
 
       {/* Product Grid */}
-      <ProductGrid listings={MOCK_LISTINGS} />
+      <ProductGrid listings={listings} />
     </div>
   );
 }

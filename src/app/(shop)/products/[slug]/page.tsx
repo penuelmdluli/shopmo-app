@@ -1,13 +1,14 @@
 import Link from "next/link";
 import { ChevronRight, Star, CheckCircle, User, Shield, Truck, RotateCcw } from "lucide-react";
 import { notFound } from "next/navigation";
-import { MOCK_LISTINGS, MOCK_REVIEWS } from "@/lib/mock-data";
+import { getListings, getListingBySlug, getReviews } from "@/lib/supabase/queries";
 import { formatDate } from "@/lib/utils";
 import { PriceDisplay } from "@/components/shared/price-display";
 import { ProductActions } from "@/components/products/product-actions";
 import { ProductGrid } from "@/components/product/product-grid";
 import { ProductSocialProof } from "@/components/products/product-social-proof";
 import { ProductGallery } from "@/components/products/product-gallery";
+import type { StorefrontListing } from "@/types/database";
 
 interface ProductPageProps {
   params: Promise<{ slug: string }>;
@@ -17,7 +18,7 @@ const SITE_URL = process.env.NEXT_PUBLIC_APP_URL || "https://shopmoo.co.za";
 
 export async function generateMetadata({ params }: ProductPageProps) {
   const { slug } = await params;
-  const listing = MOCK_LISTINGS.find((l) => l.slug === slug);
+  const listing = await getListingBySlug(slug);
   if (!listing) return { title: "Product Not Found" };
   return {
     title: listing.title,
@@ -32,8 +33,7 @@ export async function generateMetadata({ params }: ProductPageProps) {
   };
 }
 
-function ProductJsonLd({ listing }: { listing: (typeof MOCK_LISTINGS)[0] }) {
-  const reviews = MOCK_REVIEWS.filter((r) => r.listing_id === listing.id);
+function ProductJsonLd({ listing, reviewData }: { listing: StorefrontListing; reviewData: { rating: number; body: string | null; customer?: { full_name: string } }[] }) {
   const jsonLd = {
     "@context": "https://schema.org",
     "@type": "Product",
@@ -61,8 +61,8 @@ function ProductJsonLd({ listing }: { listing: (typeof MOCK_LISTINGS)[0] }) {
           worstRating: 1,
         }
       : undefined,
-    review: reviews.length > 0
-      ? reviews.slice(0, 5).map((r) => ({
+    review: reviewData.length > 0
+      ? reviewData.slice(0, 5).map((r) => ({
           "@type": "Review",
           reviewRating: { "@type": "Rating", ratingValue: r.rating, bestRating: 5 },
           author: { "@type": "Person", name: r.customer?.full_name || "Customer" },
@@ -81,23 +81,27 @@ function ProductJsonLd({ listing }: { listing: (typeof MOCK_LISTINGS)[0] }) {
 
 export default async function ProductPage({ params }: ProductPageProps) {
   const { slug } = await params;
-  const listing = MOCK_LISTINGS.find((l) => l.slug === slug);
+  const [listing, allListings] = await Promise.all([
+    getListingBySlug(slug),
+    getListings(),
+  ]);
 
   if (!listing) {
     notFound();
   }
 
-  const relatedProducts = MOCK_LISTINGS.filter(
+  const reviews = await getReviews(listing.id);
+
+  const relatedProducts = allListings.filter(
     (l) => l.category === listing.category && l.id !== listing.id
   ).slice(0, 4);
 
-  const reviews = MOCK_REVIEWS.filter((r) => r.listing_id === listing.id);
   const attributes = listing.attributes || {};
 
   return (
     <div className="max-w-7xl mx-auto px-4 py-6">
       {/* JSON-LD Structured Data for Google */}
-      <ProductJsonLd listing={listing} />
+      <ProductJsonLd listing={listing} reviewData={reviews} />
 
       {/* Breadcrumbs */}
       <nav className="flex items-center gap-1 text-sm text-muted-foreground mb-6 flex-wrap">

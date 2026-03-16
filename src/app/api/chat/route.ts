@@ -1,12 +1,16 @@
 import { NextRequest } from "next/server";
 import Anthropic from "@anthropic-ai/sdk";
+import { getListings, getDeals, getReviews } from "@/lib/supabase/queries";
 import { MOCK_LISTINGS, MOCK_DEALS, MOCK_REVIEWS } from "@/lib/mock-data";
 
-// Build rich product catalogue context
-const CATALOGUE = MOCK_LISTINGS.map(l => {
-  const reviews = MOCK_REVIEWS.filter(r => r.listing_id === l.id);
-  const topReview = reviews.sort((a, b) => b.helpful_count - a.helpful_count)[0];
-  return `PRODUCT: ${l.title}
+async function buildCatalogue() {
+  const listings = await getListings();
+  const deals = await getDeals();
+
+  const catalogue = await Promise.all(listings.map(async (l) => {
+    const reviews = await getReviews(l.id);
+    const topReview = reviews.sort((a, b) => b.helpful_count - a.helpful_count)[0];
+    return `PRODUCT: ${l.title}
   Price: R${l.current_price} (was R${l.original_price}, save R${(l.original_price || 0) - l.current_price} = ${Math.round((((l.original_price || 0) - l.current_price) / (l.original_price || 1)) * 100)}% off)
   Category: ${l.category} | Brand: ${l.brand}
   Rating: ${l.rating_average}/5 (${l.rating_count} reviews)
@@ -16,13 +20,17 @@ const CATALOGUE = MOCK_LISTINGS.map(l => {
   Specs: ${Object.entries(l.attributes || {}).map(([k, v]) => `${k}: ${v}`).join(", ")}
   Tags: ${l.tags.join(", ")}
   ${topReview ? `Top Review: "${topReview.title}" by ${topReview.customer?.full_name} — "${topReview.body}" (${topReview.helpful_count} found helpful)` : ""}`;
-}).join("\n\n");
+  }));
 
-const DEALS_INFO = MOCK_DEALS.map(d =>
-  `DEAL: ${d.listing?.title} | FLASH SALE R${d.deal_price} (was R${d.original_price}) | ${d.discount_percentage}% OFF | ${d.quantity_available! - d.quantity_sold} left out of ${d.quantity_available}! | Link: /products/${d.listing?.slug}`
-).join("\n");
+  const dealsInfo = deals.map(d =>
+    `DEAL: ${d.listing?.title} | FLASH SALE R${d.deal_price} (was R${d.original_price}) | ${d.discount_percentage}% OFF | ${(d.quantity_available ?? 0) - d.quantity_sold} left out of ${d.quantity_available}! | Link: /products/${d.listing?.slug}`
+  ).join("\n");
 
-const SYSTEM_PROMPT = `You are ShopMO AI — the #1 AI shopping assistant and FULL customer service agent for ShopMO, South Africa's smartest online store.
+  return { catalogue: catalogue.join("\n\n"), dealsInfo, listings };
+}
+
+function buildSystemPrompt(catalogue: string, dealsInfo: string) {
+  return `You are ShopMO AI — the #1 AI shopping assistant and FULL customer service agent for ShopMO, South Africa's smartest online store.
 
 YOU ARE THE ENTIRE CUSTOMER SERVICE DEPARTMENT. You handle EVERYTHING:
 
@@ -94,12 +102,12 @@ YOUR PERSONALITY
 ═══════════════════════════════════════
 CURRENT PRODUCT CATALOGUE
 ═══════════════════════════════════════
-${CATALOGUE}
+${catalogue}
 
 ═══════════════════════════════════════
 ACTIVE DEALS
 ═══════════════════════════════════════
-${DEALS_INFO}
+${dealsInfo}
 
 ═══════════════════════════════════════
 SHIPPING & DELIVERY
@@ -143,6 +151,7 @@ RESPONSE FORMAT
 - Share real customer review quotes as social proof
 - Format prices as R XXX (South African Rand)
 - Never write walls of text — customers will scroll away`;
+}
 
 export async function POST(request: NextRequest) {
   try {
@@ -159,12 +168,15 @@ export async function POST(request: NextRequest) {
       });
     }
 
+    const { catalogue, dealsInfo } = await buildCatalogue();
+    const systemPrompt = buildSystemPrompt(catalogue, dealsInfo);
+
     const anthropic = new Anthropic({ apiKey });
 
     const response = await anthropic.messages.create({
       model: "claude-sonnet-4-20250514",
       max_tokens: 1024,
-      system: SYSTEM_PROMPT,
+      system: systemPrompt,
       messages: messages.slice(-10).map((m: { role: string; content: string }) => ({
         role: m.role as "user" | "assistant",
         content: m.content,
@@ -233,7 +245,7 @@ function getOfflineResponse(message: string): string {
 
   // Deals
   if (q.includes("deal") || q.includes("sale") || q.includes("discount") || q.includes("special")) {
-    const deals = MOCK_DEALS.map(d => `**[${d.listing?.title}](/products/${d.listing?.slug})** — R${d.deal_price} (was R${d.original_price}, ${d.discount_percentage}% OFF!) — Only ${d.quantity_available! - d.quantity_sold} left!`).join("\n\n");
+    const deals = MOCK_DEALS.map(d => `**[${d.listing?.title}](/products/${d.listing?.slug})** — R${d.deal_price} (was R${d.original_price}, ${d.discount_percentage}% OFF!) — Only ${(d.quantity_available ?? 0) - d.quantity_sold} left!`).join("\n\n");
     return `Our current deals are 🔥:\n\n${deals}\n\nThese are selling fast — which one do you want before they're gone?`;
   }
 

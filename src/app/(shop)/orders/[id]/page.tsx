@@ -5,7 +5,7 @@ import {
   CreditCard, HelpCircle, ArrowLeft,
 } from "lucide-react";
 import { cn, formatCurrency } from "@/lib/utils";
-import { MOCK_LISTINGS } from "@/lib/mock-data";
+import { getListings } from "@/lib/supabase/queries";
 
 interface OrderPageProps {
   params: Promise<{ id: string }>;
@@ -17,8 +17,8 @@ export const metadata: Metadata = {
 };
 
 // Mock order data — will be replaced by Supabase queries
-function getMockOrder(id: string) {
-  const items = MOCK_LISTINGS.slice(0, 2);
+async function getMockOrder(id: string, listings: Awaited<ReturnType<typeof getListings>>) {
+  const items = listings.slice(0, 2);
   return {
     id,
     order_number: `SM-20260316-${id.toUpperCase().padStart(5, "0")}`,
@@ -77,7 +77,8 @@ const statusColors: Record<string, { bg: string; text: string; label: string }> 
 
 export default async function OrderPage({ params }: OrderPageProps) {
   const { id } = await params;
-  const order = getMockOrder(id);
+  const listings = await getListings();
+  const order = await getMockOrder(id, listings);
   const statusStyle = statusColors[order.status] || statusColors.processing;
 
   return (

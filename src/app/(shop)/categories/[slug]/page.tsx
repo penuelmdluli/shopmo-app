@@ -1,7 +1,7 @@
 import Link from "next/link";
 import { ChevronRight } from "lucide-react";
 import { notFound } from "next/navigation";
-import { MOCK_LISTINGS, MOCK_CATEGORIES } from "@/lib/mock-data";
+import { getListings, getCategories } from "@/lib/supabase/queries";
 import { ProductGrid } from "@/components/product/product-grid";
 
 interface CategoryPageProps {
@@ -10,7 +10,8 @@ interface CategoryPageProps {
 
 export async function generateMetadata({ params }: CategoryPageProps) {
   const { slug } = await params;
-  const category = MOCK_CATEGORIES.find((c) => c.slug === slug);
+  const categories = await getCategories();
+  const category = categories.find((c) => c.slug === slug);
   if (!category) return { title: "Category Not Found" };
   return {
     title: category.name,
@@ -20,13 +21,17 @@ export async function generateMetadata({ params }: CategoryPageProps) {
 
 export default async function CategoryPage({ params }: CategoryPageProps) {
   const { slug } = await params;
-  const category = MOCK_CATEGORIES.find((c) => c.slug === slug);
+  const [categories, listings] = await Promise.all([
+    getCategories(),
+    getListings(),
+  ]);
+  const category = categories.find((c) => c.slug === slug);
 
   if (!category) {
     notFound();
   }
 
-  const filteredListings = MOCK_LISTINGS.filter(
+  const filteredListings = listings.filter(
     (l) => l.category.toLowerCase().replace(/ & /g, "-").replace(/ /g, "-").toLowerCase() === slug
       || l.category === category.name
   );

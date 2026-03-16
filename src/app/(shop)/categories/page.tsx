@@ -1,6 +1,6 @@
 import Link from "next/link";
 import { ChevronRight, Package, Smartphone, Home, Shirt, Heart, Dumbbell, Gamepad2, Car, Flower2 } from "lucide-react";
-import { MOCK_CATEGORIES } from "@/lib/mock-data";
+import { getCategories } from "@/lib/supabase/queries";
 
 const ICON_MAP: Record<string, React.ElementType> = {
   Smartphone, Home, Shirt, Heart, Dumbbell, Gamepad2, Car, Flower2,
@@ -22,7 +22,9 @@ export const metadata = {
   description: "Browse products by category. Electronics, Home & Kitchen, Fashion, Beauty and more.",
 };
 
-export default function CategoriesPage() {
+export default async function CategoriesPage() {
+  const categories = await getCategories();
+
   return (
     <div className="max-w-7xl mx-auto px-4 py-6">
       {/* Breadcrumbs */}
@@ -35,7 +37,7 @@ export default function CategoriesPage() {
       <h1 className="text-2xl font-bold text-foreground mb-6">Shop by Category</h1>
 
       <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-4">
-        {MOCK_CATEGORIES.map((cat, i) => {
+        {categories.map((cat, i) => {
           const Icon = ICON_MAP[cat.icon_name || "Package"] || Package;
           return (
             <Link

@@ -1,13 +1,14 @@
 import { NextRequest, NextResponse } from "next/server";
-import { MOCK_LISTINGS } from "@/lib/mock-data";
+import { getListings } from "@/lib/supabase/queries";
 
 export async function GET(
   _request: NextRequest,
   { params }: { params: Promise<{ id: string }> }
 ) {
   const { id } = await params;
+  const listings = await getListings();
 
-  const product = MOCK_LISTINGS.find(
+  const product = listings.find(
     (p) => p.id === id || p.slug === id
   );
 

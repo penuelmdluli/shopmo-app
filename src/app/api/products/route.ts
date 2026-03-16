@@ -1,5 +1,5 @@
 import { NextRequest, NextResponse } from "next/server";
-import { MOCK_LISTINGS } from "@/lib/mock-data";
+import { getListings } from "@/lib/supabase/queries";
 
 export async function GET(request: NextRequest) {
   const { searchParams } = new URL(request.url);
@@ -9,7 +9,7 @@ export async function GET(request: NextRequest) {
   const page = Math.max(1, parseInt(searchParams.get("page") || "1", 10));
   const limit = Math.min(50, Math.max(1, parseInt(searchParams.get("limit") || "12", 10)));
 
-  let filtered = [...MOCK_LISTINGS];
+  let filtered = await getListings();
 
   // Filter by category
   if (category) {

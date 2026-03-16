@@ -1,6 +1,6 @@
 import Link from "next/link";
 import { ChevronRight, Flame } from "lucide-react";
-import { MOCK_DEALS, MOCK_LISTINGS } from "@/lib/mock-data";
+import { getListings, getDeals } from "@/lib/supabase/queries";
 import { DealsSection } from "@/components/home/deals-section";
 import { ProductGrid } from "@/components/product/product-grid";
 
@@ -9,8 +9,13 @@ export const metadata = {
   description: "Shop the best deals and flash sales. Save big on trending products.",
 };
 
-export default function DealsPage() {
-  const discountedProducts = MOCK_LISTINGS.filter(
+export default async function DealsPage() {
+  const [listings, deals] = await Promise.all([
+    getListings(),
+    getDeals(),
+  ]);
+
+  const discountedProducts = listings.filter(
     (l) => l.original_price && l.original_price > l.current_price
   );
 
@@ -37,7 +42,7 @@ export default function DealsPage() {
           <span className="w-2 h-2 bg-red-500 rounded-full animate-pulse" />
           Flash Sales - Ending Soon
         </h2>
-        <DealsSection deals={MOCK_DEALS} />
+        <DealsSection deals={deals} />
       </div>
 
       {/* All Discounted Products */}
