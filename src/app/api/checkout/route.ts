@@ -147,20 +147,10 @@ export async function POST(request: NextRequest) {
 
     if (orderError) {
       console.error("[Checkout] Failed to save order:", orderError);
-      // Still return the order even if DB save fails (graceful degradation)
-      return NextResponse.json({
-        success: true,
-        order: {
-          ...orderData,
-          id: null,
-          items: items.map((item) => ({
-            ...item,
-            total_price: Math.round(item.unit_price * item.quantity * 100) / 100,
-          })),
-          created_at: new Date().toISOString(),
-        },
-        warning: "Order created but not saved to database",
-      });
+      return NextResponse.json(
+        { error: "Failed to create order. Please try again.", details: orderError.message },
+        { status: 500 }
+      );
     }
 
     // Save order items

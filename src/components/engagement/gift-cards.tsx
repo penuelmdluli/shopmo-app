@@ -19,12 +19,13 @@ export function GiftCardSection() {
   const actualAmount = customAmount ? parseInt(customAmount) : selectedAmount;
   const isValid = actualAmount >= 50 && actualAmount <= 5000 && recipientEmail.trim() && senderName.trim();
 
-  const handlePurchase = () => {
+  const [purchaseError, setPurchaseError] = useState("");
+
+  const handlePurchase = async () => {
     if (!isValid) return;
-    // Generate a mock gift card code
-    const code = `GC-${Date.now().toString(36).toUpperCase()}-${Math.random().toString(36).substring(2, 6).toUpperCase()}`;
-    setGiftCode(code);
-    setPurchased(true);
+    setPurchaseError("");
+    // Gift card purchasing requires payment integration — show coming soon
+    setPurchaseError("Gift cards are launching soon! In the meantime, browse our products for great deals.");
   };
 
   const [copied, setCopied] = useState(false);
@@ -165,6 +166,9 @@ export function GiftCardSection() {
           </div>
 
           {/* Purchase */}
+          {purchaseError && (
+            <p className="text-sm text-amber-600 bg-amber-50 p-3 rounded-lg">{purchaseError}</p>
+          )}
           <button
             onClick={handlePurchase}
             disabled={!isValid}

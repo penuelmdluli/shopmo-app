@@ -10,9 +10,12 @@ export async function POST(req: NextRequest) {
     const webhookTimestamp = req.headers.get("webhook-timestamp");
     const webhookSignature = req.headers.get("webhook-signature");
 
-    // Verify signature if webhook secret is configured
+    // Verify signature when webhook secret is configured
     const secret = process.env.YOCO_WEBHOOK_SECRET;
-    if (secret && webhookId && webhookTimestamp && webhookSignature) {
+    if (secret) {
+      if (!webhookId || !webhookTimestamp || !webhookSignature) {
+        return NextResponse.json({ error: "Missing webhook headers" }, { status: 401 });
+      }
       const signedContent = `${webhookId}.${webhookTimestamp}.${rawBody}`;
       const secretBytes = Buffer.from(secret.replace("whsec_", ""), "base64");
       const expectedSig = crypto

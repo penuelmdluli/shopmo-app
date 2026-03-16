@@ -13,19 +13,35 @@ export default function CartPage() {
   const [couponApplied, setCouponApplied] = useState(false);
   const [couponError, setCouponError] = useState("");
 
-  const discount = couponApplied ? subtotal * 0.1 : 0;
+  const [couponDiscount, setCouponDiscount] = useState(0);
+  const [isValidating, setIsValidating] = useState(false);
+
+  const discount = couponApplied ? couponDiscount : 0;
   const afterDiscount = subtotal - discount;
   const shipping = afterDiscount >= FREE_SHIPPING_THRESHOLD ? 0 : 65;
   const vat = afterDiscount * VAT_RATE;
   const total = afterDiscount + shipping + vat;
 
-  const handleApplyCoupon = () => {
+  const handleApplyCoupon = async () => {
     setCouponError("");
-    if (couponCode.trim().toUpperCase() === "SHOPMO10") {
-      setCouponApplied(true);
-    } else {
-      setCouponError("Invalid coupon code");
+    if (!couponCode.trim()) return;
+    setIsValidating(true);
+    try {
+      const res = await fetch(`/api/coupons/validate?code=${encodeURIComponent(couponCode.trim())}&subtotal=${subtotal}`);
+      const data = await res.json();
+      if (data.valid) {
+        setCouponApplied(true);
+        setCouponDiscount(data.discount || 0);
+      } else {
+        setCouponError(data.reason || "Invalid coupon code");
+        setCouponApplied(false);
+        setCouponDiscount(0);
+      }
+    } catch {
+      setCouponError("Could not validate coupon. Try again.");
       setCouponApplied(false);
+    } finally {
+      setIsValidating(false);
     }
   };
 
@@ -147,9 +163,9 @@ export default function CartPage() {
                 <span className="font-medium">{formatCurrency(subtotal)}</span>
               </div>
 
-              {couponApplied && (
+              {couponApplied && discount > 0 && (
                 <div className="flex justify-between text-green-600">
-                  <span>Discount (10%)</span>
+                  <span>Discount</span>
                   <span>-{formatCurrency(discount)}</span>
                 </div>
               )}
@@ -202,9 +218,10 @@ export default function CartPage() {
                 </div>
                 <button
                   onClick={handleApplyCoupon}
-                  className="px-3 py-2 text-sm font-medium border border-primary text-primary rounded-lg hover:bg-primary/5 transition-colors"
+                  disabled={isValidating}
+                  className="px-3 py-2 text-sm font-medium border border-primary text-primary rounded-lg hover:bg-primary/5 transition-colors disabled:opacity-50"
                 >
-                  Apply
+                  {isValidating ? "..." : "Apply"}
                 </button>
               </div>
               {couponError && (

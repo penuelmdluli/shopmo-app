@@ -155,6 +155,13 @@ async function searchTakealot(
 
 export async function POST(request: NextRequest) {
   try {
+    // Protect hunter with API key
+    const authHeader = request.headers.get("authorization");
+    const hunterKey = process.env.HUNTER_API_KEY || process.env.SUPABASE_SERVICE_ROLE_KEY;
+    if (!authHeader || authHeader !== `Bearer ${hunterKey}`) {
+      return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
+    }
+
     const supabase = await createServiceClient();
 
     // Check for custom search params

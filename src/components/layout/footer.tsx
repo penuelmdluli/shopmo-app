@@ -20,15 +20,15 @@ export function Footer() {
               South Africa&apos;s smartest online store. AI-powered shopping with fast delivery nationwide.
             </p>
             <div className="flex gap-3">
-              <span className="w-8 h-8 bg-white/10 rounded-full flex items-center justify-center hover:bg-primary transition-colors cursor-pointer">
+              <a href="https://facebook.com/shopmoo" target="_blank" rel="noopener noreferrer" className="w-8 h-8 bg-white/10 rounded-full flex items-center justify-center hover:bg-primary transition-colors">
                 <Facebook size={16} />
-              </span>
-              <span className="w-8 h-8 bg-white/10 rounded-full flex items-center justify-center hover:bg-primary transition-colors cursor-pointer">
+              </a>
+              <a href="https://instagram.com/shopmoo_za" target="_blank" rel="noopener noreferrer" className="w-8 h-8 bg-white/10 rounded-full flex items-center justify-center hover:bg-primary transition-colors">
                 <Instagram size={16} />
-              </span>
-              <span className="w-8 h-8 bg-white/10 rounded-full flex items-center justify-center hover:bg-primary transition-colors cursor-pointer">
+              </a>
+              <a href="https://x.com/shopmoo_za" target="_blank" rel="noopener noreferrer" className="w-8 h-8 bg-white/10 rounded-full flex items-center justify-center hover:bg-primary transition-colors">
                 <Twitter size={16} />
-              </span>
+              </a>
             </div>
           </div>
 

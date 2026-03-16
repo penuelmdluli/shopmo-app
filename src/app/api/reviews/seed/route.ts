@@ -1,4 +1,4 @@
-import { NextResponse } from "next/server";
+import { NextRequest, NextResponse } from "next/server";
 import { createServiceClient } from "@/lib/supabase/service";
 
 /**
@@ -85,7 +85,14 @@ const GENERIC_REVIEWS = [
   { title: "Worth every rand", body: "Compared prices and ShopMO had the best deal. Product quality is excellent. Very satisfied customer.", rating: 4 },
 ];
 
-export async function POST() {
+export async function POST(request: NextRequest) {
+  // Protect seed endpoint — only allow with service key
+  const authHeader = request.headers.get("authorization");
+  const serviceKey = process.env.SUPABASE_SERVICE_ROLE_KEY;
+  if (!authHeader || authHeader !== `Bearer ${serviceKey}`) {
+    return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
+  }
+
   try {
     const supabase = await createServiceClient();
 

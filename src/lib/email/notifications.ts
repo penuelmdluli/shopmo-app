@@ -1,6 +1,6 @@
 import { Resend } from "resend";
 
-const OWNER_EMAIL = "mdlulipenuel@gmail.com";
+const OWNER_EMAIL = process.env.OWNER_EMAIL || "mdlulipenuel@gmail.com";
 
 // Fallback from address if custom domain not set up yet
 const FROM_EMAIL_RESEND = "ShopMO <onboarding@resend.dev>";
