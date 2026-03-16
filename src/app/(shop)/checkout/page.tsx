@@ -16,7 +16,7 @@ import {
   QrCode,
 } from "lucide-react";
 import { useCart } from "@/components/providers/providers";
-import { formatCurrency, cn, SA_PROVINCES, generateOrderNumber } from "@/lib/utils";
+import { formatCurrency, cn, SA_PROVINCES } from "@/lib/utils";
 import { FREE_SHIPPING_THRESHOLD, VAT_RATE } from "@/lib/constants";
 import { trackInitiateCheckout } from "@/lib/facebook-pixel";
 
@@ -107,13 +107,49 @@ export default function CheckoutPage() {
 
   const handlePlaceOrder = async () => {
     setIsPlacingOrder(true);
-    const orderNumber = generateOrderNumber();
 
     try {
-      // Calculate total in cents for Yoco
-      const totalInCents = Math.round(total * 100);
+      // Step 1: Create order in database via /api/checkout
+      const shippingMethodMap: Record<string, string> = {
+        standard: "the_courier_guy",
+        express: "bob_go_express",
+        same_day: "bob_go_express",
+        pargo: "pargo_pickup",
+      };
 
-      const res = await fetch("/api/payments/yoco/checkout", {
+      const checkoutRes = await fetch("/api/checkout", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          items: items.map(item => ({
+            listing_id: item.listing_id,
+            quantity: item.quantity,
+            unit_price: item.unit_price,
+            product_name: item.listing?.title || "Product",
+            product_image: item.listing?.images?.[0] || "",
+            sku: item.listing?.sku || "",
+          })),
+          address,
+          shipping_method: shippingMethodMap[selectedShipping] || "the_courier_guy",
+          payment_method: "card",
+        }),
+      });
+
+      const checkoutData = await checkoutRes.json();
+
+      if (!checkoutRes.ok || !checkoutData.success) {
+        setErrors({ submit: checkoutData.error || "Failed to create order. Please try again." });
+        setIsPlacingOrder(false);
+        return;
+      }
+
+      const orderNumber = checkoutData.order.order_number;
+      const orderTotal = checkoutData.order.total;
+
+      // Step 2: Redirect to Yoco payment
+      const totalInCents = Math.round(orderTotal * 100);
+
+      const payRes = await fetch("/api/payments/yoco/checkout", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({
@@ -127,22 +163,20 @@ export default function CheckoutPage() {
         }),
       });
 
-      const data = await res.json();
+      const payData = await payRes.json();
 
-      if (data.redirectUrl) {
-        // Save order details for success page — DON'T clear cart yet
-        // Cart will be cleared on the success page after payment confirmation
+      if (payData.redirectUrl) {
         sessionStorage.setItem("shopmo_pending_order", JSON.stringify({
           orderId: orderNumber,
-          total,
+          total: orderTotal,
           items: items.map(i => ({ title: i.listing?.title, qty: i.quantity, price: i.unit_price })),
         }));
-        window.location.href = data.redirectUrl;
+        window.location.href = payData.redirectUrl;
       } else {
-        alert("Payment error. Please try again.");
+        setErrors({ submit: "Payment setup failed. Your order has been saved — please try again from your account." });
       }
     } catch {
-      alert("Something went wrong. Please try again.");
+      setErrors({ submit: "Something went wrong. Please try again." });
     } finally {
       setIsPlacingOrder(false);
     }
@@ -501,6 +535,13 @@ export default function CheckoutPage() {
                   {PAYMENT_OPTIONS.find((o) => o.id === selectedPayment)?.provider}
                 </p>
               </div>
+            </div>
+          )}
+
+          {/* Error Message */}
+          {errors.submit && (
+            <div className="mt-4 p-3 bg-red-50 border border-red-200 text-red-700 text-sm rounded-lg">
+              {errors.submit}
             </div>
           )}
 

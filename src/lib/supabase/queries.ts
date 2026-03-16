@@ -1,10 +1,11 @@
 import { createClient } from "./server";
+import { createServiceClient } from "./service";
 import type { StorefrontListing, StorefrontCategory, CustomerReview, Deal, CustomerOrder, Coupon } from "@/types/database";
-import { MOCK_LISTINGS, MOCK_CATEGORIES, MOCK_REVIEWS, MOCK_DEALS } from "@/lib/mock-data";
 
 // ============================================
 // Product Queries — fetches from SellBot's shared Supabase DB
-// Falls back to mock data when Supabase is unavailable or empty
+// Uses service client to bypass RLS for public product reads
+// All products are real — no mock data fallbacks
 // ============================================
 
 /**
@@ -93,13 +94,13 @@ function mapListingToStorefront(listing: Record<string, unknown>, product?: Reco
 // ============================================
 
 /**
- * Get all storefront listings. Tries Supabase first, falls back to mock data.
- * Fetches from SellBot's `products` table where status is 'approved' or 'live',
- * plus any `listings` that are active.
+ * Get all storefront listings from the database.
+ * Queries SellBot's `listings` + `products` tables.
+ * Returns empty array if no products exist.
  */
 export async function getListings(): Promise<StorefrontListing[]> {
   try {
-    const supabase = await createClient();
+    const supabase = await createServiceClient();
 
     // Strategy: Query SellBot's `listings` table (which has prices, stock, etc.)
     // joined with `products` (which has images, category, description)
@@ -127,12 +128,10 @@ export async function getListings(): Promise<StorefrontListing[]> {
       return products.map((p: Record<string, unknown>) => mapProductToListing(p));
     }
 
-    // If Supabase returned nothing, use mock data
-    console.log("[ShopMO] No products in Supabase, using mock data");
-    return MOCK_LISTINGS;
+    return [];
   } catch (error) {
-    console.error("[ShopMO] Supabase query error, falling back to mock data:", error);
-    return MOCK_LISTINGS;
+    console.error("[ShopMO] Supabase query error:", error);
+    return [];
   }
 }
 
@@ -145,9 +144,7 @@ export async function getListingBySlug(slug: string): Promise<StorefrontListing 
   const found = listings.find((l) => l.slug === slug);
   if (found) return found;
 
-  // Also check mock data directly (slug might match mock but not real)
-  const mockFound = MOCK_LISTINGS.find((l) => l.slug === slug);
-  return mockFound || null;
+  return null;
 }
 
 /**
@@ -180,7 +177,7 @@ export async function searchListings(query: string): Promise<StorefrontListing[]
  */
 export async function getCategories(): Promise<StorefrontCategory[]> {
   try {
-    const supabase = await createClient();
+    const supabase = await createServiceClient();
     const { data, error } = await supabase
       .from("storefront_categories")
       .select("*")
@@ -198,8 +195,7 @@ export async function getCategories(): Promise<StorefrontCategory[]> {
       categorySet.set(l.category, (categorySet.get(l.category) || 0) + 1);
     }
 
-    // If we got real categories from products, create category objects
-    if (categorySet.size > 0 && listings !== MOCK_LISTINGS) {
+    if (categorySet.size > 0) {
       return Array.from(categorySet.entries()).map(([name], i) => ({
         id: `cat-${i + 1}`,
         name,
@@ -216,9 +212,9 @@ export async function getCategories(): Promise<StorefrontCategory[]> {
       }));
     }
 
-    return MOCK_CATEGORIES;
+    return [];
   } catch {
-    return MOCK_CATEGORIES;
+    return [];
   }
 }
 
@@ -227,7 +223,7 @@ export async function getCategories(): Promise<StorefrontCategory[]> {
  */
 export async function getReviews(listingId: string): Promise<CustomerReview[]> {
   try {
-    const supabase = await createClient();
+    const supabase = await createServiceClient();
     const { data, error } = await supabase
       .from("customer_reviews")
       .select("*, customer:customers(full_name, avatar_url)")
@@ -239,10 +235,9 @@ export async function getReviews(listingId: string): Promise<CustomerReview[]> {
       return data as CustomerReview[];
     }
 
-    // Fall back to mock reviews for this listing
-    return MOCK_REVIEWS.filter((r) => r.listing_id === listingId);
+    return [];
   } catch {
-    return MOCK_REVIEWS.filter((r) => r.listing_id === listingId);
+    return [];
   }
 }
 
@@ -251,7 +246,7 @@ export async function getReviews(listingId: string): Promise<CustomerReview[]> {
  */
 export async function getDeals(): Promise<Deal[]> {
   try {
-    const supabase = await createClient();
+    const supabase = await createServiceClient();
     const now = new Date().toISOString();
     const { data, error } = await supabase
       .from("deals")
@@ -273,9 +268,9 @@ export async function getDeals(): Promise<Deal[]> {
       });
     }
 
-    return MOCK_DEALS;
+    return [];
   } catch {
-    return MOCK_DEALS;
+    return [];
   }
 }
 

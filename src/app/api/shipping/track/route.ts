@@ -1,5 +1,5 @@
 import { NextRequest, NextResponse } from "next/server";
-import { createClient } from "@/lib/supabase/server";
+import { createServiceClient } from "@/lib/supabase/service";
 import { trackShipment } from "@/lib/shipping/courier-guy";
 
 /**
@@ -18,7 +18,7 @@ export async function GET(request: NextRequest) {
     );
   }
 
-  const supabase = await createClient();
+  const supabase = await createServiceClient();
 
   // Find the order
   let tracking = trackingNumber;

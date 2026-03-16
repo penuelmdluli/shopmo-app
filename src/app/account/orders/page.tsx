@@ -1,43 +1,80 @@
 "use client";
 
+import { useState, useEffect } from "react";
 import Link from "next/link";
-import { Package, Eye, MapPin } from "lucide-react";
+import { Package, Eye, MapPin, Loader2 } from "lucide-react";
 import { formatCurrency, formatDate, cn } from "@/lib/utils";
 import { ORDER_STATUSES } from "@/lib/constants";
+import { createClient } from "@/lib/supabase/client";
 import type { OrderStatus } from "@/types/database";
 
-const mockOrders = [
-  {
-    id: "1",
-    order_number: "SM-20260310-A1B2C",
-    created_at: "2026-03-10T14:30:00Z",
-    status: "shipped" as OrderStatus,
-    total: 1249.0,
-    item_count: 3,
-    tracking_number: "TCG123456789",
-  },
-  {
-    id: "2",
-    order_number: "SM-20260305-D3E4F",
-    created_at: "2026-03-05T09:15:00Z",
-    status: "delivered" as OrderStatus,
-    total: 495.0,
-    item_count: 1,
-    tracking_number: "TCG987654321",
-  },
-  {
-    id: "3",
-    order_number: "SM-20260228-G5H6I",
-    created_at: "2026-02-28T16:45:00Z",
-    status: "processing" as OrderStatus,
-    total: 2150.0,
-    item_count: 5,
-    tracking_number: null,
-  },
-];
+interface OrderRow {
+  id: string;
+  order_number: string;
+  created_at: string;
+  status: OrderStatus;
+  total: number;
+  shipping_tracking_number: string | null;
+  items: { id: string }[];
+}
 
 export default function OrdersPage() {
-  if (mockOrders.length === 0) {
+  const [orders, setOrders] = useState<OrderRow[]>([]);
+  const [loading, setLoading] = useState(true);
+
+  useEffect(() => {
+    async function fetchOrders() {
+      try {
+        const supabase = createClient();
+        const { data: { user } } = await supabase.auth.getUser();
+
+        if (!user) {
+          setLoading(false);
+          return;
+        }
+
+        // Find customer record
+        const { data: customer } = await supabase
+          .from("customers")
+          .select("id")
+          .eq("auth_user_id", user.id)
+          .single();
+
+        if (!customer) {
+          setLoading(false);
+          return;
+        }
+
+        // Fetch orders with item count
+        const { data, error } = await supabase
+          .from("customer_orders")
+          .select("id, order_number, created_at, status, total, shipping_tracking_number, items:customer_order_items(id)")
+          .eq("customer_id", customer.id)
+          .order("created_at", { ascending: false });
+
+        if (!error && data) {
+          setOrders(data as unknown as OrderRow[]);
+        }
+      } catch (err) {
+        console.error("[Account/Orders] Failed to fetch:", err);
+      } finally {
+        setLoading(false);
+      }
+    }
+
+    fetchOrders();
+  }, []);
+
+  if (loading) {
+    return (
+      <div className="flex items-center justify-center py-16">
+        <Loader2 size={24} className="animate-spin text-primary" />
+        <span className="ml-2 text-sm text-gray-500">Loading orders...</span>
+      </div>
+    );
+  }
+
+  if (orders.length === 0) {
     return (
       <div className="bg-white rounded-xl border border-gray-200 p-12 text-center">
         <Package size={48} className="mx-auto text-gray-300 mb-4" />
@@ -59,8 +96,9 @@ export default function OrdersPage() {
     <div className="space-y-4">
       <h2 className="text-lg font-semibold text-gray-900">Order History</h2>
 
-      {mockOrders.map((order) => {
-        const statusInfo = ORDER_STATUSES[order.status];
+      {orders.map((order) => {
+        const statusInfo = ORDER_STATUSES[order.status] || { label: order.status, color: "bg-gray-100 text-gray-700" };
+        const itemCount = order.items?.length || 0;
         return (
           <div
             key={order.id}
@@ -87,13 +125,13 @@ export default function OrdersPage() {
 
             <div className="flex items-center justify-between border-t border-gray-100 pt-3">
               <div className="flex items-center gap-4 text-sm text-gray-600">
-                <span>{order.item_count} item{order.item_count > 1 ? "s" : ""}</span>
+                <span>{itemCount} item{itemCount !== 1 ? "s" : ""}</span>
                 <span className="font-semibold text-gray-900">
                   {formatCurrency(order.total)}
                 </span>
               </div>
               <div className="flex items-center gap-2">
-                {order.tracking_number && (
+                {order.shipping_tracking_number && (
                   <Link
                     href={`/track?order=${order.order_number}`}
                     className="flex items-center gap-1 px-3 py-1.5 text-xs font-medium text-primary border border-primary/30 rounded-lg hover:bg-primary/5 transition-colors"
@@ -103,7 +141,7 @@ export default function OrdersPage() {
                   </Link>
                 )}
                 <Link
-                  href={`/orders/${order.id}`}
+                  href={`/orders/${order.order_number}`}
                   className="flex items-center gap-1 px-3 py-1.5 text-xs font-medium text-gray-700 border border-gray-200 rounded-lg hover:bg-gray-50 transition-colors"
                 >
                   <Eye size={14} />

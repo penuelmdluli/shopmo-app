@@ -1,7 +1,7 @@
 import { NextRequest, NextResponse } from "next/server";
 import { z } from "zod";
 import { getReviews } from "@/lib/supabase/queries";
-import { createClient } from "@/lib/supabase/server";
+import { createServiceClient } from "@/lib/supabase/service";
 
 const createReviewSchema = z.object({
   listing_id: z.string().min(1, "listing_id is required"),
@@ -49,7 +49,7 @@ export async function POST(request: NextRequest) {
       );
     }
 
-    const supabase = await createClient();
+    const supabase = await createServiceClient();
 
     // Check if customer_order_id is valid for verified purchase
     let isVerified = false;

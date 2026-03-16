@@ -1,6 +1,6 @@
 import { NextRequest, NextResponse } from "next/server";
 import { z } from "zod";
-import { createClient } from "@/lib/supabase/server";
+import { createServiceClient } from "@/lib/supabase/service";
 import { createShipment, mapServiceCode } from "@/lib/shipping/courier-guy";
 
 const bookingSchema = z.object({
@@ -31,7 +31,7 @@ export async function POST(request: NextRequest) {
     }
 
     const { order_number, service_level, parcels } = parsed.data;
-    const supabase = await createClient();
+    const supabase = await createServiceClient();
 
     // Fetch the order from database
     const { data: order, error: orderError } = await supabase

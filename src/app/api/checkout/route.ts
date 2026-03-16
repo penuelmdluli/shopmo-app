@@ -1,6 +1,7 @@
 import { NextRequest, NextResponse } from "next/server";
 import { z } from "zod";
-import { createClient } from "@/lib/supabase/server";
+import { createServiceClient } from "@/lib/supabase/service";
+import { notifyOwnerNewOrder, sendCustomerOrderConfirmation } from "@/lib/email/notifications";
 
 const checkoutItemSchema = z.object({
   listing_id: z.string().min(1),
@@ -70,7 +71,7 @@ export async function POST(request: NextRequest) {
 
     // Validate coupon from database
     let discount_amount = 0;
-    const supabase = await createClient();
+    const supabase = await createServiceClient();
 
     if (coupon_code) {
       const { data: coupon } = await supabase
@@ -201,6 +202,47 @@ export async function POST(request: NextRequest) {
       } catch (err) {
         console.error("[Checkout] Failed to update coupon usage:", err);
       }
+    }
+
+    // ============================================
+    // SEND EMAIL NOTIFICATIONS (non-blocking)
+    // ============================================
+    const emailData = {
+      order_number,
+      total,
+      subtotal: Math.round(subtotal * 100) / 100,
+      shipping_cost,
+      discount_amount: Math.round(discount_amount * 100) / 100,
+      vat_amount,
+      payment_method,
+      shipping_method,
+      customer_name: address.full_name || guest_name || "Guest",
+      customer_email: guest_email || null,
+      customer_phone: guest_phone || address.phone || null,
+      address: {
+        street_address: address.street_address,
+        suburb: address.suburb,
+        city: address.city,
+        province: address.province,
+        postal_code: address.postal_code,
+      },
+      items: items.map((item) => ({
+        product_name: item.product_name,
+        quantity: item.quantity,
+        unit_price: item.unit_price,
+        total_price: Math.round(item.unit_price * item.quantity * 100) / 100,
+      })),
+    };
+
+    // Fire-and-forget: don't block checkout response on email delivery
+    notifyOwnerNewOrder(emailData).catch((err) =>
+      console.error("[Checkout] Owner email failed:", err)
+    );
+
+    if (guest_email) {
+      sendCustomerOrderConfirmation(guest_email, emailData).catch((err) =>
+        console.error("[Checkout] Customer email failed:", err)
+      );
     }
 
     // Also create records in SellBot's orders table for seller visibility

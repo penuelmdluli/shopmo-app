@@ -27,17 +27,23 @@ interface TCGParcel {
 
 interface TCGRateResponse {
   rates: Array<{
+    rate: number;
+    rate_excluding_vat: number;
     service_level: {
+      id: number;
       code: string;
       name: string;
       description: string;
+      delivery_date_from: string;
+      delivery_date_to: string;
+      collection_date: string;
+      collection_cut_off_time: string;
     };
-    rate: {
+    base_rate: {
       charge: number;
-      charge_ex_vat: number;
     };
-    delivery_date_from: string;
-    delivery_date_to: string;
+    surcharges: unknown[];
+    charged_weight: number;
   }>;
 }
 

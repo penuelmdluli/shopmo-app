@@ -1,8 +1,9 @@
 "use client";
 
-import { useState } from "react";
-import { MapPin, Plus, Edit2, Trash2, Check, X } from "lucide-react";
+import { useState, useEffect } from "react";
+import { MapPin, Plus, Edit2, Trash2, Check, X, Loader2 } from "lucide-react";
 import { SA_PROVINCES, cn } from "@/lib/utils";
+import { createClient } from "@/lib/supabase/client";
 
 interface Address {
   id: string;
@@ -17,33 +18,6 @@ interface Address {
   is_default: boolean;
 }
 
-const mockAddresses: Address[] = [
-  {
-    id: "1",
-    label: "Home",
-    full_name: "Sabelo Mdluli",
-    phone: "079 257 2466",
-    street_address: "123 Church Street",
-    suburb: "Arcadia",
-    city: "Pretoria",
-    province: "Gauteng",
-    postal_code: "0007",
-    is_default: true,
-  },
-  {
-    id: "2",
-    label: "Office",
-    full_name: "Sabelo Mdluli",
-    phone: "079 257 2466",
-    street_address: "456 Jan Smuts Avenue",
-    suburb: "Rosebank",
-    city: "Johannesburg",
-    province: "Gauteng",
-    postal_code: "2196",
-    is_default: false,
-  },
-];
-
 const emptyForm: Omit<Address, "id" | "is_default"> = {
   label: "",
   full_name: "",
@@ -56,10 +30,56 @@ const emptyForm: Omit<Address, "id" | "is_default"> = {
 };
 
 export default function AddressesPage() {
-  const [addresses, setAddresses] = useState<Address[]>(mockAddresses);
+  const [addresses, setAddresses] = useState<Address[]>([]);
+  const [customerId, setCustomerId] = useState<string | null>(null);
+  const [loading, setLoading] = useState(true);
+  const [saving, setSaving] = useState(false);
   const [showForm, setShowForm] = useState(false);
   const [editingId, setEditingId] = useState<string | null>(null);
   const [formData, setFormData] = useState(emptyForm);
+
+  useEffect(() => {
+    async function fetchAddresses() {
+      try {
+        const supabase = createClient();
+        const { data: { user } } = await supabase.auth.getUser();
+
+        if (!user) {
+          setLoading(false);
+          return;
+        }
+
+        const { data: customer } = await supabase
+          .from("customers")
+          .select("id")
+          .eq("auth_user_id", user.id)
+          .single();
+
+        if (!customer) {
+          setLoading(false);
+          return;
+        }
+
+        setCustomerId(customer.id);
+
+        const { data, error } = await supabase
+          .from("customer_addresses")
+          .select("id, label, full_name, phone, street_address, suburb, city, province, postal_code, is_default")
+          .eq("customer_id", customer.id)
+          .order("is_default", { ascending: false });
+
+        if (!error && data) {
+          setAddresses(data as Address[]);
+        }
+      } catch (err) {
+        console.error("[Addresses] Failed to load:", err);
+      } finally {
+        setLoading(false);
+      }
+    }
+
+    fetchAddresses();
+  }, []);
 
   const handleChange = (field: string, value: string) => {
     setFormData((prev) => ({ ...prev, [field]: value }));
@@ -78,7 +98,7 @@ export default function AddressesPage() {
       full_name: address.full_name,
       phone: address.phone,
       street_address: address.street_address,
-      suburb: address.suburb,
+      suburb: address.suburb || "",
       city: address.city,
       province: address.province,
       postal_code: address.postal_code,
@@ -86,28 +106,121 @@ export default function AddressesPage() {
     setShowForm(true);
   };
 
-  const handleDelete = (id: string) => {
-    setAddresses((prev) => prev.filter((a) => a.id !== id));
+  const handleDelete = async (id: string) => {
+    if (!confirm("Are you sure you want to delete this address?")) return;
+
+    try {
+      const supabase = createClient();
+      const { error } = await supabase
+        .from("customer_addresses")
+        .delete()
+        .eq("id", id);
+
+      if (!error) {
+        setAddresses((prev) => prev.filter((a) => a.id !== id));
+      }
+    } catch (err) {
+      console.error("[Addresses] Delete failed:", err);
+    }
   };
 
-  const handleSave = (e: React.FormEvent) => {
-    e.preventDefault();
-    if (editingId) {
+  const handleSetDefault = async (id: string) => {
+    if (!customerId) return;
+
+    try {
+      const supabase = createClient();
+      await supabase
+        .from("customer_addresses")
+        .update({ is_default: false })
+        .eq("customer_id", customerId);
+
+      await supabase
+        .from("customer_addresses")
+        .update({ is_default: true })
+        .eq("id", id);
+
       setAddresses((prev) =>
-        prev.map((a) => (a.id === editingId ? { ...a, ...formData } : a))
+        prev.map((a) => ({ ...a, is_default: a.id === id }))
       );
-    } else {
-      const newAddress: Address = {
-        ...formData,
-        id: crypto.randomUUID(),
-        is_default: addresses.length === 0,
-      };
-      setAddresses((prev) => [...prev, newAddress]);
+    } catch (err) {
+      console.error("[Addresses] Set default failed:", err);
     }
-    setShowForm(false);
-    setEditingId(null);
-    setFormData(emptyForm);
   };
+
+  const handleSave = async (e: React.FormEvent) => {
+    e.preventDefault();
+    if (!customerId) return;
+
+    setSaving(true);
+
+    try {
+      const supabase = createClient();
+
+      if (editingId) {
+        const { error } = await supabase
+          .from("customer_addresses")
+          .update({
+            label: formData.label,
+            full_name: formData.full_name,
+            phone: formData.phone,
+            street_address: formData.street_address,
+            suburb: formData.suburb || null,
+            city: formData.city,
+            province: formData.province,
+            postal_code: formData.postal_code,
+          })
+          .eq("id", editingId);
+
+        if (!error) {
+          setAddresses((prev) =>
+            prev.map((a) =>
+              a.id === editingId ? { ...a, ...formData, suburb: formData.suburb || "" } : a
+            )
+          );
+        }
+      } else {
+        const isFirst = addresses.length === 0;
+        const { data, error } = await supabase
+          .from("customer_addresses")
+          .insert({
+            customer_id: customerId,
+            label: formData.label,
+            full_name: formData.full_name,
+            phone: formData.phone,
+            street_address: formData.street_address,
+            suburb: formData.suburb || null,
+            city: formData.city,
+            province: formData.province,
+            postal_code: formData.postal_code,
+            country: "South Africa",
+            is_default: isFirst,
+          })
+          .select("id, label, full_name, phone, street_address, suburb, city, province, postal_code, is_default")
+          .single();
+
+        if (!error && data) {
+          setAddresses((prev) => [...prev, data as Address]);
+        }
+      }
+
+      setShowForm(false);
+      setEditingId(null);
+      setFormData(emptyForm);
+    } catch (err) {
+      console.error("[Addresses] Save failed:", err);
+    } finally {
+      setSaving(false);
+    }
+  };
+
+  if (loading) {
+    return (
+      <div className="flex items-center justify-center py-16">
+        <Loader2 size={24} className="animate-spin text-primary" />
+        <span className="ml-2 text-sm text-gray-500">Loading addresses...</span>
+      </div>
+    );
+  }
 
   return (
     <div className="space-y-4">
@@ -143,6 +256,15 @@ export default function AddressesPage() {
               )}
             </div>
             <div className="flex items-center gap-1">
+              {!address.is_default && (
+                <button
+                  onClick={() => handleSetDefault(address.id)}
+                  className="px-2 py-1 text-xs text-primary hover:bg-primary/10 rounded transition-colors"
+                  title="Set as default"
+                >
+                  Set Default
+                </button>
+              )}
               <button
                 onClick={() => handleEdit(address)}
                 className="p-1.5 text-gray-400 hover:text-primary transition-colors"
@@ -295,8 +417,10 @@ export default function AddressesPage() {
             <div className="flex gap-3 pt-2">
               <button
                 type="submit"
-                className="px-6 py-2.5 bg-primary text-white font-medium rounded-lg hover:bg-primary/90 transition-colors"
+                disabled={saving}
+                className="px-6 py-2.5 bg-primary text-white font-medium rounded-lg hover:bg-primary/90 disabled:opacity-50 transition-colors flex items-center gap-2"
               >
+                {saving ? <Loader2 size={16} className="animate-spin" /> : null}
                 {editingId ? "Update Address" : "Save Address"}
               </button>
               <button

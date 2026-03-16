@@ -1,6 +1,7 @@
 import { NextRequest, NextResponse } from "next/server";
 import crypto from "crypto";
-import { createClient } from "@/lib/supabase/server";
+import { createServiceClient } from "@/lib/supabase/service";
+import { notifyOwnerAlert } from "@/lib/email/notifications";
 
 export async function POST(req: NextRequest) {
   try {
@@ -32,7 +33,7 @@ export async function POST(req: NextRequest) {
     const event = JSON.parse(rawBody);
     console.log(`[Yoco Webhook] ${event.type}:`, JSON.stringify(event.payload?.metadata));
 
-    const supabase = await createClient();
+    const supabase = await createServiceClient();
 
     if (event.type === "payment.succeeded") {
       const { metadata } = event.payload || {};
@@ -112,6 +113,13 @@ export async function POST(req: NextRequest) {
           .eq("platform", "shopmo");
 
         console.log(`[Yoco] Payment failed for order ${orderId}`);
+
+        // Alert owner about failed payment
+        notifyOwnerAlert(
+          `Payment Failed — Order ${orderId}`,
+          `A payment attempt failed for order ${orderId}.\n\nThe order has been cancelled. The customer may retry or need assistance.\n\nPayment Provider: Yoco\nEvent: ${event.type}`,
+          "warning"
+        ).catch((err) => console.error("[Yoco] Failed payment alert email error:", err));
       }
     }
 

@@ -50,11 +50,11 @@ export async function POST(request: NextRequest) {
           provider: "The Courier Guy",
           service_name: rate.service_level.name,
           service_code: rate.service_level.code,
-          price: Math.round(rate.rate.charge * 100) / 100,
-          estimated_days: Math.ceil(
-            (new Date(rate.delivery_date_to).getTime() - now.getTime()) / (1000 * 60 * 60 * 24)
-          ),
-          estimated_delivery: rate.delivery_date_to.split("T")[0],
+          price: Math.round(rate.rate * 100) / 100,
+          estimated_days: Math.max(1, Math.ceil(
+            (new Date(rate.service_level.delivery_date_to).getTime() - now.getTime()) / (1000 * 60 * 60 * 24)
+          )),
+          estimated_delivery: rate.service_level.delivery_date_to.split("T")[0],
           tracking_available: true,
         }));
 

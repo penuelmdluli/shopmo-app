@@ -6,9 +6,10 @@
   "assets": {
     "directory": ".open-next/assets",
     "binding": "ASSETS"
-  },
-  "routes": [
-    { "pattern": "shopmoo.co.za", "custom_domain": true },
-    { "pattern": "www.shopmoo.co.za", "custom_domain": true }
-  ]
+  }
+  // Custom domain routes - uncomment after shopmoo.co.za is added to Cloudflare:
+  // "routes": [
+  //   { "pattern": "shopmoo.co.za", "custom_domain": true },
+  //   { "pattern": "www.shopmoo.co.za", "custom_domain": true }
+  // ]
 }

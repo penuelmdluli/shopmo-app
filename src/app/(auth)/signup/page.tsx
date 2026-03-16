@@ -34,7 +34,7 @@ export default function SignupPage() {
 
     try {
       const supabase = createClient();
-      const { error: authError } = await supabase.auth.signUp({
+      const { data, error: authError } = await supabase.auth.signUp({
         email,
         password,
         options: {
@@ -49,6 +49,26 @@ export default function SignupPage() {
       if (authError) {
         setError(authError.message);
         return;
+      }
+
+      // Create customer record in the customers table
+      if (data.user) {
+        try {
+          await supabase.from("customers").insert({
+            auth_user_id: data.user.id,
+            email: email,
+            full_name: fullName,
+            phone: phone || null,
+            marketing_opt_in: marketingOptIn,
+            whatsapp_opt_in: false,
+            preferred_language: "en",
+            loyalty_points: 0,
+            total_orders: 0,
+            total_spent: 0,
+          });
+        } catch (err) {
+          console.error("[Signup] Failed to create customer record:", err);
+        }
       }
 
       setSuccess(true);

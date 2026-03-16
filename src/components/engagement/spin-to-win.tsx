@@ -58,60 +58,67 @@ export function SpinToWin() {
     return () => clearTimeout(timer);
   }, []);
 
-  // Draw the wheel
+  // Draw the wheel when modal becomes visible
   useEffect(() => {
-    const canvas = canvasRef.current;
-    if (!canvas) return;
-    const ctx = canvas.getContext("2d");
-    if (!ctx) return;
+    if (!show) return;
 
-    const size = canvas.width;
-    const center = size / 2;
-    const radius = center - 4;
-    const segCount = SEGMENTS.length;
-    const arcSize = (2 * Math.PI) / segCount;
+    // Small delay to ensure canvas is mounted in the DOM
+    const drawTimer = setTimeout(() => {
+      const canvas = canvasRef.current;
+      if (!canvas) return;
+      const ctx = canvas.getContext("2d");
+      if (!ctx) return;
 
-    ctx.clearRect(0, 0, size, size);
+      const size = canvas.width;
+      const center = size / 2;
+      const radius = center - 4;
+      const segCount = SEGMENTS.length;
+      const arcSize = (2 * Math.PI) / segCount;
 
-    SEGMENTS.forEach((seg, i) => {
-      const startAngle = i * arcSize;
-      const endAngle = startAngle + arcSize;
+      ctx.clearRect(0, 0, size, size);
 
-      // Draw segment
+      SEGMENTS.forEach((seg, i) => {
+        const startAngle = i * arcSize;
+        const endAngle = startAngle + arcSize;
+
+        // Draw segment
+        ctx.beginPath();
+        ctx.moveTo(center, center);
+        ctx.arc(center, center, radius, startAngle, endAngle);
+        ctx.closePath();
+        ctx.fillStyle = seg.color;
+        ctx.fill();
+        ctx.strokeStyle = "#fff";
+        ctx.lineWidth = 2;
+        ctx.stroke();
+
+        // Draw text
+        ctx.save();
+        ctx.translate(center, center);
+        ctx.rotate(startAngle + arcSize / 2);
+        ctx.textAlign = "right";
+        ctx.fillStyle = seg.textColor;
+        ctx.font = "bold 11px sans-serif";
+        ctx.fillText(seg.label, radius - 12, 4);
+        ctx.restore();
+      });
+
+      // Center circle
       ctx.beginPath();
-      ctx.moveTo(center, center);
-      ctx.arc(center, center, radius, startAngle, endAngle);
-      ctx.closePath();
-      ctx.fillStyle = seg.color;
+      ctx.arc(center, center, 18, 0, 2 * Math.PI);
+      ctx.fillStyle = "#0891b2";
       ctx.fill();
       ctx.strokeStyle = "#fff";
-      ctx.lineWidth = 2;
+      ctx.lineWidth = 3;
       ctx.stroke();
+      ctx.fillStyle = "#fff";
+      ctx.font = "bold 9px sans-serif";
+      ctx.textAlign = "center";
+      ctx.fillText("SPIN", center, center + 3);
+    }, 50);
 
-      // Draw text
-      ctx.save();
-      ctx.translate(center, center);
-      ctx.rotate(startAngle + arcSize / 2);
-      ctx.textAlign = "right";
-      ctx.fillStyle = seg.textColor;
-      ctx.font = "bold 11px sans-serif";
-      ctx.fillText(seg.label, radius - 12, 4);
-      ctx.restore();
-    });
-
-    // Center circle
-    ctx.beginPath();
-    ctx.arc(center, center, 18, 0, 2 * Math.PI);
-    ctx.fillStyle = "#0891b2";
-    ctx.fill();
-    ctx.strokeStyle = "#fff";
-    ctx.lineWidth = 3;
-    ctx.stroke();
-    ctx.fillStyle = "#fff";
-    ctx.font = "bold 9px sans-serif";
-    ctx.textAlign = "center";
-    ctx.fillText("SPIN", center, center + 3);
-  }, []);
+    return () => clearTimeout(drawTimer);
+  }, [show]);
 
   const handleSpin = () => {
     if (!email.trim() || spinning) return;

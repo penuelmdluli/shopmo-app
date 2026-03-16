@@ -8,6 +8,7 @@ import { ProductActions } from "@/components/products/product-actions";
 import { ProductGrid } from "@/components/product/product-grid";
 import { ProductSocialProof } from "@/components/products/product-social-proof";
 import { ProductGallery } from "@/components/products/product-gallery";
+import { ReviewForm } from "@/components/reviews/review-form";
 import type { StorefrontListing } from "@/types/database";
 
 interface ProductPageProps {
@@ -250,8 +251,13 @@ export default async function ProductPage({ params }: ProductPageProps) {
             ))}
           </div>
         ) : (
-          <p className="text-muted-foreground text-sm">No reviews yet. Be the first to review this product!</p>
+          <p className="text-muted-foreground text-sm mb-4">No reviews yet. Be the first to review this product!</p>
         )}
+
+        {/* Review Form */}
+        <div className="mt-6">
+          <ReviewForm listingId={listing.id} productName={listing.title} />
+        </div>
       </section>
 
       {/* Related Products */}

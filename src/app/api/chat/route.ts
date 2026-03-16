@@ -1,7 +1,6 @@
 import { NextRequest } from "next/server";
 import Anthropic from "@anthropic-ai/sdk";
 import { getListings, getDeals, getReviews } from "@/lib/supabase/queries";
-import { MOCK_LISTINGS, MOCK_DEALS, MOCK_REVIEWS } from "@/lib/mock-data";
 
 async function buildCatalogue() {
   const listings = await getListings();
@@ -197,83 +196,52 @@ export async function POST(request: NextRequest) {
 
 function getOfflineResponse(message: string): string {
   const q = message.toLowerCase();
-  const words = q.split(/\s+/);
 
-  // Smart keyword matching across all products
-  const scored = MOCK_LISTINGS.map(l => {
-    let score = 0;
-    const text = `${l.title} ${l.description} ${l.category} ${l.tags.join(" ")}`.toLowerCase();
-    for (const word of words) {
-      if (word.length < 3) continue;
-      if (text.includes(word)) score += 2;
-      if (l.title.toLowerCase().includes(word)) score += 3;
-      if (l.tags.some(t => t.includes(word))) score += 2;
-    }
-    return { listing: l, score };
-  }).filter(s => s.score > 0).sort((a, b) => b.score - a.score);
-
-  if (scored.length > 0) {
-    const top = scored.slice(0, 3);
-    const recs = top.map(({ listing: l }) => {
-      const savings = (l.original_price || 0) - l.current_price;
-      const review = MOCK_REVIEWS.find(r => r.listing_id === l.id);
-      let rec = `**[${l.title}](/products/${l.slug})** — R${l.current_price}`;
-      if (savings > 0) rec += ` (save R${savings}!)`;
-      rec += ` ⭐ ${l.rating_average}/5`;
-      if (review) rec += `\n_"${review.title}" — ${review.customer?.full_name}_`;
-      return rec;
-    }).join("\n\n");
-    return `Here's what I found for you:\n\n${recs}\n\nWant me to tell you more about any of these? I can also help you compare them!`;
+  // Product-related queries — direct to browse
+  if (q.includes("buy") || q.includes("looking for") || q.includes("want") || q.includes("need") || q.includes("recommend")) {
+    return "I'd love to help you find the perfect product! Browse our full catalogue at [All Products](/products) — we have Electronics, Home & Kitchen, Fashion, Beauty, Sports, Toys, Automotive, and Garden & DIY.\n\nWhat category interests you?";
   }
 
   // Budget queries
   if (q.includes("under") || q.includes("budget") || q.includes("cheap") || q.includes("affordable")) {
-    const budget = parseInt(q.match(/\d+/)?.[0] || "300");
-    const affordable = MOCK_LISTINGS.filter(l => l.current_price <= budget).sort((a, b) => b.rating_average - a.rating_average).slice(0, 3);
-    if (affordable.length > 0) {
-      const recs = affordable.map(l => `**[${l.title}](/products/${l.slug})** — R${l.current_price} ⭐ ${l.rating_average}/5`).join("\n\n");
-      return `Great picks under R${budget}:\n\n${recs}\n\nAll of these are bestsellers! Which one catches your eye?`;
-    }
+    return "We have great deals across all price ranges! Check out our [Products](/products) page — you can sort by price to find the best value.\n\nWhat's your budget? I can help narrow it down!";
   }
 
   // Gift queries
   if (q.includes("gift") || q.includes("present") || q.includes("birthday")) {
-    const gifts = MOCK_LISTINGS.filter(l => l.rating_average >= 4.5).sort((a, b) => b.rating_count - a.rating_count).slice(0, 3);
-    const recs = gifts.map(l => `**[${l.title}](/products/${l.slug})** — R${l.current_price} ⭐ ${l.rating_average}/5 (${l.rating_count} reviews)`).join("\n\n");
-    return `Here are our top-rated gift picks 🎁:\n\n${recs}\n\nThese are our most loved products — perfect for gifting! Who's the lucky person?`;
+    return "Looking for the perfect gift? Browse our top-rated products at [Shop Now](/products) — we have options across 8 categories.\n\nWho's the lucky person and what's your budget?";
   }
 
   // Deals
   if (q.includes("deal") || q.includes("sale") || q.includes("discount") || q.includes("special")) {
-    const deals = MOCK_DEALS.map(d => `**[${d.listing?.title}](/products/${d.listing?.slug})** — R${d.deal_price} (was R${d.original_price}, ${d.discount_percentage}% OFF!) — Only ${(d.quantity_available ?? 0) - d.quantity_sold} left!`).join("\n\n");
-    return `Our current deals are 🔥:\n\n${deals}\n\nThese are selling fast — which one do you want before they're gone?`;
+    return "Check out our latest deals at [Products](/products)! Many items are on sale with big savings.\n\nUse code **SHOPMO10** for 10% off your first order!";
   }
 
   // Shipping
   if (q.includes("delivery") || q.includes("shipping") || q.includes("courier")) {
-    return "We deliver nationwide across all 9 SA provinces! 🚚\n\n- **Free delivery** on orders over R500\n- **Standard**: R65 (3-5 days)\n- **Express**: R99 (1-2 days)\n- **Same-day**: R149 (before 12pm)\n- **Pargo pickup**: R45 (4000+ Checkers, Shell, PEP locations)\n\nWant to start shopping? Check our [trending products](/products)!";
+    return "We deliver nationwide across all 9 SA provinces!\n\n- **Free delivery** on orders over R500\n- **Standard**: R65 (3-5 days)\n- **Express**: R99 (1-2 days)\n- **Same-day**: R149 (before 12pm)\n- **Pargo pickup**: R45 (4000+ locations)\n\nWant to start shopping? Check our [products](/products)!";
   }
 
   // Returns
   if (q.includes("return") || q.includes("refund") || q.includes("exchange")) {
-    return "No stress at all! We have a **30-day hassle-free return policy**.\n\nJust reach out and we'll arrange everything — full refund or exchange, your choice. Items must be unused and in original packaging.\n\nNeed help with anything else? Here's a **10% off** code for your next order: **SHOPMO10** 🎉";
+    return "No stress at all! We have a **30-day hassle-free return policy**.\n\nJust reach out and we'll arrange everything — full refund or exchange, your choice. Items must be unused and in original packaging.\n\nHere's **10% off** your next order: **SHOPMO10**";
   }
 
   // Payment
   if (q.includes("payment") || q.includes("pay") || q.includes("eft") || q.includes("card")) {
-    return "We accept all major payment methods:\n\n- 💳 **Credit/Debit Card** (Visa, Mastercard, Amex)\n- 🏦 **EFT** & **Instant EFT** (via Ozow)\n- 📱 **SnapScan** (QR code payment)\n- 🛒 **Mobicred** (buy now, pay later)\n\nAll secured with SSL encryption. Ready to check out? Visit your [cart](/cart)!";
+    return "We accept all major payment methods:\n\n- Credit/Debit Card (Visa, Mastercard, Amex)\n- EFT & Instant EFT (via Ozow)\n- SnapScan (QR code payment)\n- Mobicred (buy now, pay later)\n\nAll secured with SSL encryption. Ready to check out? Visit your [cart](/cart)!";
   }
 
   // Order tracking
   if (q.includes("track") || q.includes("order") || q.includes("where") || q.includes("status")) {
-    return "I can help you track your order! 📦\n\nPlease share your **order number** (starts with SM-) and I'll look up the status for you.\n\nYou can also track directly at [Track Order](/track).\n\nDon't have your order number? Check your email for the confirmation.";
+    return "I can help you track your order!\n\nPlease share your **order number** (starts with SM-) and I'll look it up.\n\nYou can also track directly at [Track Order](/track).";
   }
 
   // Complaint
   if (q.includes("complain") || q.includes("broken") || q.includes("wrong") || q.includes("damaged") || q.includes("unhappy") || q.includes("problem")) {
-    return "I'm really sorry to hear that! 😔 Your satisfaction is our #1 priority.\n\nPlease share your **order number** and describe the issue — I'll escalate this immediately and we'll make it right.\n\nAs a gesture, here's **10% off** your next order: **SHOPMO10**. We value you as a customer!";
+    return "I'm really sorry to hear that! Your satisfaction is our #1 priority.\n\nPlease share your **order number** and describe the issue — I'll escalate this immediately.\n\nHere's **10% off** your next order: **SHOPMO10**. We value you as a customer!";
   }
 
   // Default — warm greeting with suggestions
-  return "Hey there! 👋 I'm **ShopMO AI** — your personal shopping assistant AND full customer service team, all in one.\n\nI can help you with:\n- 🛒 Finding the perfect product\n- 💰 Getting the best deals\n- 📦 Tracking your order\n- 🔄 Returns & exchanges\n- 🎁 Gift recommendations\n\nWhat can I help you with today?";
+  return "Hey there! I'm **ShopMO AI** — your personal shopping assistant AND full customer service team, all in one.\n\nI can help you with:\n- Finding the perfect product\n- Getting the best deals\n- Tracking your order\n- Returns & exchanges\n- Gift recommendations\n\nWhat can I help you with today?";
 }

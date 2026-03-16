@@ -1,74 +1,77 @@
 "use client";
 
 import { useState } from "react";
-import { Search, Package, CheckCircle, Truck, MapPin, Clock } from "lucide-react";
-import { cn } from "@/lib/utils";
+import { Search, Package, CheckCircle, Truck, MapPin, Clock, Loader2 } from "lucide-react";
+import { cn, formatDate } from "@/lib/utils";
 
-const mockTracking = {
-  order_number: "SM-20260310-A1B2C",
-  status: "shipped",
-  tracking_number: "TCG123456789",
-  courier: "The Courier Guy",
-  estimated_delivery: "15 March 2026",
-  timeline: [
-    {
-      status: "Order Placed",
-      date: "10 March 2026, 14:30",
-      description: "Your order has been placed and confirmed.",
-      icon: Package,
-      complete: true,
-    },
-    {
-      status: "Payment Confirmed",
-      date: "10 March 2026, 14:32",
-      description: "Payment received via Yoco.",
-      icon: CheckCircle,
-      complete: true,
-    },
-    {
-      status: "Processing",
-      date: "11 March 2026, 09:15",
-      description: "Your order is being packed and prepared for shipping.",
-      icon: Clock,
-      complete: true,
-    },
-    {
-      status: "Shipped",
-      date: "12 March 2026, 11:40",
-      description: "Tracking: TCG123456789 via The Courier Guy.",
-      icon: Truck,
-      complete: true,
-    },
-    {
-      status: "Out for Delivery",
-      date: "",
-      description: "Your parcel is on its way to you.",
-      icon: MapPin,
-      complete: false,
-    },
-    {
-      status: "Delivered",
-      date: "",
-      description: "",
-      icon: CheckCircle,
-      complete: false,
-    },
-  ],
-};
+interface TimelineStep {
+  status: string;
+  description: string;
+  date: string | null;
+  completed: boolean;
+  tracking_number?: string;
+}
+
+interface TrackingResult {
+  order_number: string;
+  status: string;
+  tracking_number: string | null;
+  courier: string;
+  estimated_delivery: string | null;
+  message?: string;
+  timeline: TimelineStep[];
+}
+
+const timelineIcons = [Package, CheckCircle, Clock, Truck, MapPin, CheckCircle];
 
 export default function TrackPage() {
   const [orderNumber, setOrderNumber] = useState("");
-  const [tracking, setTracking] = useState<typeof mockTracking | null>(null);
+  const [tracking, setTracking] = useState<TrackingResult | null>(null);
   const [searched, setSearched] = useState(false);
+  const [loading, setLoading] = useState(false);
+  const [error, setError] = useState("");
 
-  const handleTrack = (e: React.FormEvent) => {
+  const handleTrack = async (e: React.FormEvent) => {
     e.preventDefault();
+    if (!orderNumber.trim()) return;
+
+    setLoading(true);
+    setError("");
     setSearched(true);
-    // Mock: any input returns tracking data
-    if (orderNumber.trim()) {
-      setTracking({ ...mockTracking, order_number: orderNumber.trim() });
-    } else {
-      setTracking(null);
+    setTracking(null);
+
+    try {
+      const res = await fetch(`/api/shipping/track?order_number=${encodeURIComponent(orderNumber.trim())}`);
+      const data = await res.json();
+
+      if (!res.ok) {
+        setError(data.error || "Order not found");
+        return;
+      }
+
+      // Map API response to our display format
+      const result: TrackingResult = {
+        order_number: data.order?.order_number || orderNumber.trim(),
+        status: data.order?.status || data.tracking?.status || "unknown",
+        tracking_number: data.tracking?.number || data.order?.shipping_tracking_number || null,
+        courier: data.tracking?.provider || data.order?.shipping_provider || "The Courier Guy",
+        estimated_delivery: data.order?.shipping_estimated_delivery || null,
+        message: data.message || null,
+        timeline: data.timeline || [
+          { status: "Order Placed", description: "Your order has been placed.", date: data.order?.created_at, completed: true },
+          { status: "Payment Confirmed", description: "Payment received.", date: data.order?.updated_at, completed: data.order?.status !== "pending_payment" },
+          { status: "Processing", description: "Preparing for dispatch.", date: null, completed: ["processing", "shipped", "out_for_delivery", "delivered"].includes(data.order?.status || "") },
+          { status: "Shipped", description: data.tracking?.number ? `Tracking: ${data.tracking.number}` : "Shipped with courier.", date: null, completed: ["shipped", "out_for_delivery", "delivered"].includes(data.order?.status || "") },
+          { status: "Out for Delivery", description: "On its way to you.", date: null, completed: ["out_for_delivery", "delivered"].includes(data.order?.status || "") },
+          { status: "Delivered", description: "Delivered successfully.", date: null, completed: data.order?.status === "delivered" },
+        ],
+      };
+
+      setTracking(result);
+    } catch {
+      setError("Failed to look up order. Please try again.");
+    } finally {
+      setLoading(false);
     }
   };
 
@@ -93,11 +96,22 @@ export default function TrackPage() {
         </div>
         <button
           type="submit"
-          className="px-6 py-3 bg-primary text-white font-medium rounded-lg hover:bg-primary/90 transition-colors"
+          disabled={loading}
+          className="px-6 py-3 bg-primary text-white font-medium rounded-lg hover:bg-primary/90 transition-colors disabled:opacity-60 flex items-center justify-center gap-2"
         >
+          {loading ? <Loader2 size={16} className="animate-spin" /> : null}
           Track
         </button>
       </form>
+
+      {/* Error */}
+      {error && searched && (
+        <div className="text-center py-12">
+          <Package size={48} className="mx-auto text-gray-300 mb-4" />
+          <h2 className="text-lg font-semibold text-gray-900 mb-2">No Order Found</h2>
+          <p className="text-sm text-gray-500">{error}</p>
+        </div>
+      )}
 
       {/* Tracking Results */}
       {tracking && (
@@ -109,9 +123,19 @@ export default function TrackPage() {
             </div>
             <div className="text-right">
               <p className="text-sm text-gray-500">Estimated Delivery</p>
-              <p className="font-semibold text-gray-900">{tracking.estimated_delivery}</p>
+              <p className="font-semibold text-gray-900">
+                {tracking.estimated_delivery
+                  ? formatDate(tracking.estimated_delivery)
+                  : "Pending"}
+              </p>
             </div>
           </div>
+
+          {tracking.message && (
+            <div className="bg-blue-50 border border-blue-200 rounded-lg p-3 mb-6 text-sm text-blue-700">
+              {tracking.message}
+            </div>
+          )}
 
           {tracking.tracking_number && (
             <div className="bg-gray-50 rounded-lg p-3 mb-6 text-sm">
@@ -125,7 +149,7 @@ export default function TrackPage() {
           {/* Timeline */}
           <div className="space-y-0">
             {tracking.timeline.map((step, i) => {
-              const Icon = step.icon;
+              const Icon = timelineIcons[i] || Package;
               const isLast = i === tracking.timeline.length - 1;
               return (
                 <div key={step.status} className="flex gap-4">
@@ -133,7 +157,7 @@ export default function TrackPage() {
                     <div
                       className={cn(
                         "w-8 h-8 rounded-full flex items-center justify-center shrink-0",
-                        step.complete
+                        step.completed
                           ? "bg-primary text-white"
                           : "bg-gray-100 text-gray-400"
                       )}
@@ -144,7 +168,7 @@ export default function TrackPage() {
                       <div
                         className={cn(
                           "w-0.5 h-12",
-                          step.complete ? "bg-primary" : "bg-gray-200"
+                          step.completed ? "bg-primary" : "bg-gray-200"
                         )}
                       />
                     )}
@@ -153,13 +177,13 @@ export default function TrackPage() {
                     <p
                       className={cn(
                         "text-sm font-medium",
-                        step.complete ? "text-gray-900" : "text-gray-400"
+                        step.completed ? "text-gray-900" : "text-gray-400"
                       )}
                     >
                       {step.status}
                     </p>
                     {step.date && (
-                      <p className="text-xs text-gray-500 mt-0.5">{step.date}</p>
+                      <p className="text-xs text-gray-500 mt-0.5">{formatDate(step.date)}</p>
                     )}
                     {step.description && (
                       <p className="text-xs text-gray-500 mt-0.5">{step.description}</p>
@@ -169,17 +193,6 @@ export default function TrackPage() {
               );
             })}
           </div>
-        </div>
-      )}
-
-      {/* Empty State */}
-      {searched && !tracking && (
-        <div className="text-center py-12">
-          <Package size={48} className="mx-auto text-gray-300 mb-4" />
-          <h2 className="text-lg font-semibold text-gray-900 mb-2">No Order Found</h2>
-          <p className="text-sm text-gray-500">
-            Please check your order number and try again.
-          </p>
         </div>
       )}
     </div>
