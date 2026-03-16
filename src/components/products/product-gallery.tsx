@@ -20,18 +20,25 @@ export function ProductGallery({ images, title }: ProductGalleryProps) {
   const hasImages = images && images.length > 0;
   const currentImage = hasImages ? images[selectedIndex] : null;
 
+  // Lens size as percentage of the image container
+  const LENS_SIZE = 35;
+
   const handleMouseMove = useCallback((e: React.MouseEvent<HTMLDivElement>) => {
     if (!mainImageRef.current) return;
     const rect = mainImageRef.current.getBoundingClientRect();
     const x = ((e.clientX - rect.left) / rect.width) * 100;
     const y = ((e.clientY - rect.top) / rect.height) * 100;
-    setZoomPosition({ x: Math.max(0, Math.min(100, x)), y: Math.max(0, Math.min(100, y)) });
+    setZoomPosition({
+      x: Math.max(LENS_SIZE / 2, Math.min(100 - LENS_SIZE / 2, x)),
+      y: Math.max(LENS_SIZE / 2, Math.min(100 - LENS_SIZE / 2, y)),
+    });
   }, []);
 
   const handleMouseEnter = useCallback(() => setIsZooming(true), []);
   const handleMouseLeave = useCallback(() => setIsZooming(false), []);
 
   const openLightbox = (index: number) => {
+    if (isZooming) return; // Don't open lightbox while zooming on desktop
     setLightboxIndex(index);
     setLightboxOpen(true);
     document.body.style.overflow = "hidden";
@@ -67,44 +74,63 @@ export function ProductGallery({ images, title }: ProductGalleryProps) {
     );
   }
 
+  // Calculate zoom panel background position from lens position
+  const zoomBgX = ((zoomPosition.x - LENS_SIZE / 2) / (100 - LENS_SIZE)) * 100;
+  const zoomBgY = ((zoomPosition.y - LENS_SIZE / 2) / (100 - LENS_SIZE)) * 100;
+
   return (
     <>
-      <div>
-        {/* Main Image with Zoom */}
+      <div className="relative">
+        {/* Main Image — always stays clean and crisp */}
         <div
           ref={mainImageRef}
-          className="aspect-square bg-gray-100 rounded-xl overflow-hidden mb-4 relative cursor-zoom-in group"
+          className="aspect-square bg-gray-100 rounded-xl overflow-hidden mb-4 relative cursor-crosshair group"
           onMouseMove={handleMouseMove}
           onMouseEnter={handleMouseEnter}
           onMouseLeave={handleMouseLeave}
           onClick={() => openLightbox(selectedIndex)}
         >
-          {/* Normal Image */}
           <ProductImage
             src={currentImage!}
             fallbackSrc={images.length > 1 ? images[1] : undefined}
             alt={title}
-            className="w-full h-full object-contain p-4 transition-opacity duration-200"
+            className="w-full h-full object-contain p-4"
           />
 
-          {/* Zoom Overlay — shows zoomed-in portion on hover */}
+          {/* Hover lens indicator — shows which area is being magnified */}
           {isZooming && (
             <div
-              className="absolute inset-0 pointer-events-none z-10"
+              className="absolute border-2 border-primary/40 bg-primary/10 pointer-events-none z-10 rounded-sm"
               style={{
-                backgroundImage: `url(${currentImage})`,
-                backgroundSize: "250%",
-                backgroundPosition: `${zoomPosition.x}% ${zoomPosition.y}%`,
-                backgroundRepeat: "no-repeat",
+                width: `${LENS_SIZE}%`,
+                height: `${LENS_SIZE}%`,
+                left: `${zoomPosition.x - LENS_SIZE / 2}%`,
+                top: `${zoomPosition.y - LENS_SIZE / 2}%`,
               }}
             />
           )}
 
-          {/* Zoom hint icon */}
-          <div className="absolute bottom-3 right-3 bg-white/80 backdrop-blur-sm rounded-full p-2 opacity-0 group-hover:opacity-100 transition-opacity z-20 pointer-events-none">
-            <ZoomIn size={18} className="text-gray-700" />
-          </div>
+          {/* Zoom hint — only shows when NOT zooming */}
+          {!isZooming && (
+            <div className="absolute bottom-3 right-3 bg-white/80 backdrop-blur-sm rounded-full p-2 opacity-0 group-hover:opacity-100 transition-opacity z-20 pointer-events-none flex items-center gap-1.5">
+              <ZoomIn size={16} className="text-gray-700" />
+              <span className="text-xs text-gray-600 font-medium pr-1">Hover to zoom</span>
+            </div>
+          )}
         </div>
+
+        {/* Zoom Panel — appears to the right of the image on desktop */}
+        {isZooming && (
+          <div
+            className="hidden lg:block absolute left-[calc(100%+16px)] top-0 w-[400px] h-[400px] rounded-xl border border-gray-200 shadow-xl overflow-hidden z-30 bg-white"
+            style={{
+              backgroundImage: `url(${currentImage})`,
+              backgroundSize: `${100 / (LENS_SIZE / 100)}%`,
+              backgroundPosition: `${zoomBgX}% ${zoomBgY}%`,
+              backgroundRepeat: "no-repeat",
+            }}
+          />
+        )}
 
         {/* Thumbnails */}
         <div className="grid grid-cols-4 gap-2">
@@ -138,7 +164,7 @@ export function ProductGallery({ images, title }: ProductGalleryProps) {
         </div>
       </div>
 
-      {/* Lightbox Modal */}
+      {/* Lightbox Modal — opens on click (mobile) */}
       {lightboxOpen && (
         <div
           className="fixed inset-0 bg-black/90 z-50 flex items-center justify-center"
@@ -180,6 +206,7 @@ export function ProductGallery({ images, title }: ProductGalleryProps) {
             className="max-w-[90vw] max-h-[90vh] flex items-center justify-center"
             onClick={(e) => e.stopPropagation()}
           >
+            {/* eslint-disable-next-line @next/next/no-img-element */}
             <img
               src={images[lightboxIndex]}
               alt={`${title} - Full View ${lightboxIndex + 1}`}
@@ -201,6 +228,7 @@ export function ProductGallery({ images, title }: ProductGalleryProps) {
                       : "border-transparent opacity-50 hover:opacity-80"
                   }`}
                 >
+                  {/* eslint-disable-next-line @next/next/no-img-element */}
                   <img
                     src={img}
                     alt={`Thumbnail ${i + 1}`}
