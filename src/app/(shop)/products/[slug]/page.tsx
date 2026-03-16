@@ -1,5 +1,5 @@
 import Link from "next/link";
-import { ChevronRight, Star, ShoppingCart, CheckCircle, User, Shield, Truck, RotateCcw } from "lucide-react";
+import { ChevronRight, Star, CheckCircle, User, Shield, Truck, RotateCcw } from "lucide-react";
 import { notFound } from "next/navigation";
 import { MOCK_LISTINGS, MOCK_REVIEWS } from "@/lib/mock-data";
 import { formatDate } from "@/lib/utils";
@@ -7,7 +7,7 @@ import { PriceDisplay } from "@/components/shared/price-display";
 import { ProductActions } from "@/components/products/product-actions";
 import { ProductGrid } from "@/components/product/product-grid";
 import { ProductSocialProof } from "@/components/products/product-social-proof";
-import { ProductImage } from "@/components/shared/product-image";
+import { ProductGallery } from "@/components/products/product-gallery";
 
 interface ProductPageProps {
   params: Promise<{ slug: string }>;
@@ -112,36 +112,8 @@ export default async function ProductPage({ params }: ProductPageProps) {
 
       {/* Product Layout */}
       <div className="grid grid-cols-1 lg:grid-cols-2 gap-8 mb-12">
-        {/* Left: Gallery */}
-        <div>
-          <div className="aspect-square bg-gray-100 rounded-xl overflow-hidden mb-4">
-            {listing.images && listing.images.length > 0 ? (
-              <ProductImage
-                src={listing.images[0]}
-                fallbackSrc={listing.images.length > 1 ? listing.images[1] : undefined}
-                alt={listing.title}
-                className="w-full h-full object-contain p-4"
-              />
-            ) : (
-              <div className="w-full h-full flex items-center justify-center text-gray-300">
-                <ShoppingCart size={80} />
-              </div>
-            )}
-          </div>
-          <div className="grid grid-cols-4 gap-2">
-            {(listing.images && listing.images.length > 0 ? listing.images : [null, null, null, null]).slice(0, 4).map((img, i) => (
-              <div key={i} className="aspect-square bg-gray-100 rounded-lg overflow-hidden">
-                {img ? (
-                  <ProductImage src={img} alt={`${listing.title} ${i + 1}`} className="w-full h-full object-contain p-1" />
-                ) : (
-                  <div className="w-full h-full flex items-center justify-center text-gray-200">
-                    <ShoppingCart size={24} />
-                  </div>
-                )}
-              </div>
-            ))}
-          </div>
-        </div>
+        {/* Left: Gallery with Zoom & Lightbox */}
+        <ProductGallery images={listing.images || []} title={listing.title} />
 
         {/* Right: Product Info */}
         <div>
