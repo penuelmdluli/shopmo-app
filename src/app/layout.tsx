@@ -25,21 +25,24 @@ export const metadata: Metadata = {
     template: "%s | ShopMO",
   },
   description:
-    "Shop 32+ trending products with AI-powered recommendations. Free delivery over R500. Secure payments via Yoco. Fast shipping across South Africa.",
-  keywords: ["online shopping", "South Africa", "e-commerce", "trending products", "fast delivery", "ShopMO", "Takealot alternative", "cheap online shopping SA"],
+    "Shop 127+ trending products with AI-powered recommendations. Free delivery over R500. Secure payments via Yoco. Fast shipping across South Africa. Electronics, fashion, home & more.",
+  keywords: ["online shopping", "South Africa", "e-commerce", "trending products", "fast delivery", "ShopMO", "Takealot alternative", "cheap online shopping SA", "buy online South Africa", "online store SA", "best deals South Africa"],
+  verification: {
+    google: "d5e2a520578255e1",
+  },
   openGraph: {
     type: "website",
     locale: "en_ZA",
     url: "https://shopmoo.co.za",
     siteName: "ShopMO",
-    title: "ShopMO - South Africa's Smartest Online Store",
-    description: "Shop 32+ trending products. Free delivery over R500. AI shopping assistant. Secure Yoco payments.",
-    images: [{ url: "https://shopmoo.co.za/og-image.png", width: 1200, height: 630, alt: "ShopMO" }],
+    title: "ShopMO - South Africa's Smartest Online Store | 127+ Products",
+    description: "Shop 127+ trending products. Free delivery over R500. AI shopping assistant. Secure Yoco payments. Electronics, fashion, home & kitchen deals.",
+    images: [{ url: "https://shopmoo.co.za/api/og", width: 1200, height: 630, alt: "ShopMO - South Africa's Smartest Online Store" }],
   },
   twitter: {
     card: "summary_large_image",
     title: "ShopMO - South Africa's Smartest Online Store",
-    description: "Shop trending products with AI-powered recommendations. Fast delivery across SA.",
+    description: "Shop 127+ trending products with AI-powered recommendations. Free delivery over R500. Fast delivery across SA.",
   },
   robots: { index: true, follow: true },
 };
@@ -60,6 +63,9 @@ export default function RootLayout({
   return (
     <html lang="en" suppressHydrationWarning>
       <head>
+        <link rel="icon" href="/favicon.svg" type="image/svg+xml" />
+        <link rel="apple-touch-icon" href="/apple-icon.svg" />
+        <link rel="manifest" href="/site.webmanifest" />
         {/* Facebook Pixel */}
         {FB_PIXEL_ID && (
           <Script id="fb-pixel" strategy="afterInteractive">

@@ -10,9 +10,9 @@ import { CartDrawer } from "@/components/cart/cart-drawer";
 const NAV_CATEGORIES = [
   { name: "Electronics", slug: "electronics" },
   { name: "Home & Kitchen", slug: "home-kitchen" },
-  { name: "Fashion", slug: "fashion" },
+  { name: "Fashion & Clothing", slug: "fashion-clothing" },
   { name: "Beauty & Health", slug: "beauty-health" },
-  { name: "Sports & Outdoors", slug: "sports-outdoors" },
+  { name: "Sports & Fitness", slug: "sports-fitness" },
   { name: "Deals", slug: "/deals", isPage: true },
   { name: "Gift Cards", slug: "/gift-cards", isPage: true },
 ];

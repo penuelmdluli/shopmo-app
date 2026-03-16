@@ -128,19 +128,26 @@ export default async function ProductPage({ params }: ProductPageProps) {
           <h1 className="text-2xl font-bold text-foreground mb-3">{listing.title}</h1>
 
           {/* Rating */}
-          <div className="flex items-center gap-2 mb-4">
-            <div className="flex">
-              {[1, 2, 3, 4, 5].map((star) => (
-                <Star
-                  key={star}
-                  size={18}
-                  className={star <= Math.round(listing.rating_average) ? "text-yellow-400 fill-yellow-400" : "text-gray-200"}
-                />
-              ))}
+          {listing.rating_count > 0 ? (
+            <div className="flex items-center gap-2 mb-4">
+              <div className="flex">
+                {[1, 2, 3, 4, 5].map((star) => (
+                  <Star
+                    key={star}
+                    size={18}
+                    className={star <= Math.round(listing.rating_average) ? "text-yellow-400 fill-yellow-400" : "text-gray-200"}
+                  />
+                ))}
+              </div>
+              <span className="text-sm font-medium text-foreground">{listing.rating_average}</span>
+              <span className="text-sm text-muted-foreground">({listing.rating_count} reviews)</span>
             </div>
-            <span className="text-sm font-medium text-foreground">{listing.rating_average}</span>
-            <span className="text-sm text-muted-foreground">({listing.rating_count} reviews)</span>
-          </div>
+          ) : (
+            <div className="flex items-center gap-2 mb-4">
+              <span className="text-sm text-primary font-medium">New Arrival</span>
+              <span className="text-sm text-muted-foreground">Be the first to review</span>
+            </div>
+          )}
 
           {/* Price */}
           <div className="mb-6">
@@ -181,24 +188,38 @@ export default async function ProductPage({ params }: ProductPageProps) {
         </div>
       </div>
 
-      {/* Specifications */}
-      {Object.keys(attributes).length > 0 && (
-        <section className="mb-12">
-          <h2 className="text-xl font-bold text-foreground mb-4">Specifications</h2>
-          <div className="bg-white border border-border rounded-xl overflow-hidden">
-            <table className="w-full text-sm">
-              <tbody>
-                {Object.entries(attributes).map(([key, value], i) => (
-                  <tr key={key} className={i % 2 === 0 ? "bg-gray-50" : "bg-white"}>
-                    <td className="px-4 py-3 font-medium text-foreground w-1/3">{key}</td>
-                    <td className="px-4 py-3 text-muted-foreground">{value}</td>
-                  </tr>
-                ))}
-              </tbody>
-            </table>
-          </div>
-        </section>
-      )}
+      {/* Specifications — filter out internal SellBot AI analysis fields */}
+      {(() => {
+        const internalKeys = new Set([
+          "verdict", "reasoning", "sa_trend", "risk_factors", "rules_failed",
+          "rules_passed", "barcode_status", "source_url_hint", "competitive_strategy",
+          "supplier_price", "estimated_margin", "margin", "cost_price",
+          "ai_analysis", "ai_score", "discovery_source", "source_url",
+          "profit_margin", "supplier", "supplier_name", "supplier_url",
+        ]);
+        const filtered = Object.entries(attributes).filter(
+          ([key]) => !internalKeys.has(key) && !key.startsWith("_")
+        );
+        return filtered.length > 0 ? (
+          <section className="mb-12">
+            <h2 className="text-xl font-bold text-foreground mb-4">Specifications</h2>
+            <div className="bg-white border border-border rounded-xl overflow-hidden">
+              <table className="w-full text-sm">
+                <tbody>
+                  {filtered.map(([key, value], i) => (
+                    <tr key={key} className={i % 2 === 0 ? "bg-gray-50" : "bg-white"}>
+                      <td className="px-4 py-3 font-medium text-foreground w-1/3 capitalize">
+                        {key.replace(/_/g, " ")}
+                      </td>
+                      <td className="px-4 py-3 text-muted-foreground">{value}</td>
+                    </tr>
+                  ))}
+                </tbody>
+              </table>
+            </div>
+          </section>
+        ) : null;
+      })()}
 
       {/* Reviews */}
       <section className="mb-12">
@@ -207,48 +228,57 @@ export default async function ProductPage({ params }: ProductPageProps) {
         </h2>
         {reviews.length > 0 ? (
           <div className="space-y-4">
-            {reviews.map((review) => (
-              <div key={review.id} className="bg-white border border-border rounded-xl p-4">
-                <div className="flex items-start justify-between mb-2">
-                  <div className="flex items-center gap-2">
-                    <div className="w-8 h-8 bg-gray-200 rounded-full flex items-center justify-center">
-                      <User size={16} className="text-gray-500" />
+            {reviews.map((review) => {
+              // Extract reviewer name from body (format: "review text\n\n— Name L.")
+              const bodyParts = review.body?.split("\n\n— ") || [];
+              const reviewBody = bodyParts[0] || review.body;
+              const reviewerName = review.customer?.full_name || bodyParts[1] || "Verified Customer";
+
+              return (
+                <div key={review.id} className="bg-white border border-border rounded-xl p-4">
+                  <div className="flex items-start justify-between mb-2">
+                    <div className="flex items-center gap-2">
+                      <div className="w-8 h-8 bg-primary/10 rounded-full flex items-center justify-center">
+                        <span className="text-xs font-bold text-primary">
+                          {reviewerName.charAt(0)}
+                        </span>
+                      </div>
+                      <div>
+                        <p className="text-sm font-medium text-foreground">{reviewerName}</p>
+                        <p className="text-xs text-muted-foreground">{formatDate(review.created_at)}</p>
+                      </div>
                     </div>
-                    <div>
-                      <p className="text-sm font-medium text-foreground">{review.customer?.full_name}</p>
-                      <p className="text-xs text-muted-foreground">{formatDate(review.created_at)}</p>
-                    </div>
+                    {review.is_verified_purchase && (
+                      <span className="flex items-center gap-1 text-xs text-green-700 bg-green-50 px-2 py-1 rounded-full">
+                        <CheckCircle size={12} />
+                        Verified Purchase
+                      </span>
+                    )}
                   </div>
-                  {review.is_verified_purchase && (
-                    <span className="flex items-center gap-1 text-xs text-green-700 bg-green-50 px-2 py-1 rounded-full">
-                      <CheckCircle size={12} />
-                      Verified
-                    </span>
+                  <div className="flex mb-2">
+                    {[1, 2, 3, 4, 5].map((star) => (
+                      <Star
+                        key={star}
+                        size={14}
+                        className={star <= review.rating ? "text-yellow-400 fill-yellow-400" : "text-gray-200"}
+                      />
+                    ))}
+                  </div>
+                  {review.title && (
+                    <p className="font-medium text-foreground text-sm mb-1">{review.title}</p>
+                  )}
+                  {reviewBody && (
+                    <p className="text-sm text-muted-foreground">{reviewBody}</p>
+                  )}
+                  {review.seller_response && (
+                    <div className="mt-3 pl-4 border-l-2 border-primary bg-primary/5 p-3 rounded-r-lg">
+                      <p className="text-xs font-medium text-primary mb-1">Seller Response</p>
+                      <p className="text-sm text-muted-foreground">{review.seller_response}</p>
+                    </div>
                   )}
                 </div>
-                <div className="flex mb-2">
-                  {[1, 2, 3, 4, 5].map((star) => (
-                    <Star
-                      key={star}
-                      size={14}
-                      className={star <= review.rating ? "text-yellow-400 fill-yellow-400" : "text-gray-200"}
-                    />
-                  ))}
-                </div>
-                {review.title && (
-                  <p className="font-medium text-foreground text-sm mb-1">{review.title}</p>
-                )}
-                {review.body && (
-                  <p className="text-sm text-muted-foreground">{review.body}</p>
-                )}
-                {review.seller_response && (
-                  <div className="mt-3 pl-4 border-l-2 border-primary bg-primary/5 p-3 rounded-r-lg">
-                    <p className="text-xs font-medium text-primary mb-1">Seller Response</p>
-                    <p className="text-sm text-muted-foreground">{review.seller_response}</p>
-                  </div>
-                )}
-              </div>
-            ))}
+              );
+            })}
           </div>
         ) : (
           <p className="text-muted-foreground text-sm mb-4">No reviews yet. Be the first to review this product!</p>

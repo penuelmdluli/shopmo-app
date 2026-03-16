@@ -1,5 +1,5 @@
 import Link from "next/link";
-import { Package, Mail, Phone, MapPin, Facebook, Instagram, Twitter } from "lucide-react";
+import { Package, Mail, MapPin, Facebook, Instagram, Twitter, MessageCircle } from "lucide-react";
 
 export function Footer() {
   return (
@@ -66,8 +66,8 @@ export function Footer() {
                 <span>support@shopmoo.co.za</span>
               </li>
               <li className="flex items-center gap-2">
-                <Phone size={16} className="text-primary" />
-                <span>079 257 2466</span>
+                <MessageCircle size={16} className="text-primary" />
+                <Link href="/contact" className="hover:text-white transition-colors">Live Chat & Support</Link>
               </li>
               <li className="flex items-start gap-2">
                 <MapPin size={16} className="text-primary mt-0.5" />

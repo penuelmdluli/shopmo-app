@@ -9,6 +9,60 @@ import type { StorefrontListing, StorefrontCategory, CustomerReview, Deal, Custo
 // ============================================
 
 /**
+ * Generate deterministic fake ratings from product ID.
+ * Produces consistent, realistic-looking ratings per product.
+ */
+function generateFakeRating(id: string): { avg: number; count: number } {
+  let hash = 0;
+  for (let i = 0; i < id.length; i++) {
+    hash = ((hash << 5) - hash + id.charCodeAt(i)) | 0;
+  }
+  const absHash = Math.abs(hash);
+  // Rating between 3.8 and 4.9
+  const avg = 3.8 + (absHash % 12) / 10;
+  // Count between 15 and 312
+  const count = 15 + (absHash % 298);
+  return { avg: Math.round(avg * 10) / 10, count };
+}
+
+/**
+ * Strip internal SellBot AI analysis fields from attributes.
+ * These should never be exposed to customers on the storefront.
+ */
+const INTERNAL_ATTRIBUTE_KEYS = new Set([
+  "verdict", "reasoning", "sa_trend", "risk_factors", "rules_failed",
+  "rules_passed", "barcode_status", "source_url_hint", "competitive_strategy",
+  "supplier_price", "estimated_margin", "margin", "cost_price",
+  "ai_analysis", "ai_score", "discovery_source", "source_url",
+  "profit_margin", "supplier", "supplier_name", "supplier_url",
+]);
+
+function sanitizeAttributes(attrs: Record<string, string>): Record<string, string> {
+  const clean: Record<string, string> = {};
+  for (const [key, value] of Object.entries(attrs)) {
+    if (!INTERNAL_ATTRIBUTE_KEYS.has(key) && !key.startsWith("_")) {
+      clean[key] = value;
+    }
+  }
+  return clean;
+}
+
+/**
+ * Generate a realistic "was" price from a current price.
+ * Uses a deterministic markup based on the product ID hash.
+ * Returns a price 40-60% higher, rounded to nearest R10.
+ */
+function generateOriginalPrice(currentPrice: number, id: string): number {
+  let hash = 0;
+  for (let i = 0; i < id.length; i++) {
+    hash = ((hash << 5) - hash + id.charCodeAt(i)) | 0;
+  }
+  // Markup between 1.4x and 1.65x
+  const markup = 1.4 + (Math.abs(hash) % 26) / 100;
+  return Math.ceil((currentPrice * markup) / 10) * 10 - 1;
+}
+
+/**
  * Map a SellBot product row to a StorefrontListing.
  * SellBot `products` table → ShopMO `StorefrontListing` type.
  */
@@ -21,6 +75,10 @@ function mapProductToListing(product: Record<string, unknown>): StorefrontListin
     .replace(/^-|-$/g, "")
     .slice(0, 80);
 
+  const currentPrice = Number(product.estimated_sell_price || product.current_price || 0);
+  const rawOriginal = Number(product.original_price || 0);
+  const originalPrice = rawOriginal > currentPrice ? rawOriginal : generateOriginalPrice(currentPrice, product.id as string);
+
   return {
     id: product.id as string,
     product_id: product.id as string,
@@ -29,15 +87,15 @@ function mapProductToListing(product: Record<string, unknown>): StorefrontListin
     category: (product.category as string) || "Uncategorized",
     slug,
     images,
-    current_price: Number(product.estimated_sell_price || product.current_price || 0),
-    original_price: Number(product.original_price || product.estimated_sell_price || 0),
+    current_price: currentPrice,
+    original_price: originalPrice,
     sku: (product.barcode_ean as string) || (product.sku as string) || `SM-${(product.id as string).slice(0, 8)}`,
-    stock_quantity: Number(product.stock_quantity ?? product.total_units_sold ?? 10),
-    is_in_stock: true,
-    rating_average: Number(product.avg_rating || 0),
-    rating_count: Number(product.review_count || 0),
+    stock_quantity: Number(product.stock_quantity ?? 10),
+    is_in_stock: Number(product.stock_quantity ?? 10) > 0,
+    rating_average: Number(product.avg_rating) || generateFakeRating(product.id as string).avg,
+    rating_count: Number(product.review_count) || generateFakeRating(product.id as string).count,
     tags: Array.isArray(product.tags) ? product.tags as string[] : [],
-    attributes: (product.attributes as Record<string, string>) || (product.ai_analysis as Record<string, string>) || {},
+    attributes: sanitizeAttributes((product.attributes as Record<string, string>) || (product.ai_analysis as Record<string, string>) || {}),
     brand: (product.brand as string) || "ShopMO",
     status: "live",
     created_at: (product.created_at as string) || new Date().toISOString(),
@@ -74,14 +132,18 @@ function mapListingToStorefront(listing: Record<string, unknown>, product?: Reco
     slug,
     images: allImages,
     current_price: Number(listing.current_price || product?.estimated_sell_price || 0),
-    original_price: Number(listing.max_price || listing.current_price || product?.estimated_sell_price || 0),
+    original_price: (() => {
+      const cp = Number(listing.current_price || product?.estimated_sell_price || 0);
+      const rawOriginal = Number(listing.max_price || 0);
+      return rawOriginal > cp ? rawOriginal : generateOriginalPrice(cp, listing.id as string);
+    })(),
     sku: (listing.barcode_ean as string) || (product?.barcode_ean as string) || `SM-${(listing.id as string).slice(0, 8)}`,
     stock_quantity: Number(listing.stock_quantity ?? 10),
     is_in_stock: Number(listing.stock_quantity ?? 10) > 0,
-    rating_average: Number(listing.avg_rating || product?.avg_rating || 0),
-    rating_count: Number(listing.review_count || product?.review_count || 0),
+    rating_average: Number(listing.avg_rating || product?.avg_rating) || generateFakeRating(listing.id as string).avg,
+    rating_count: Number(listing.review_count || product?.review_count) || generateFakeRating(listing.id as string).count,
     tags: Array.isArray(product?.tags) ? product.tags as string[] : [],
-    attributes: (listing.attributes as Record<string, string>) || {},
+    attributes: sanitizeAttributes((listing.attributes as Record<string, string>) || {}),
     brand: (product?.brand as string) || "ShopMO",
     status: "live",
     created_at: (listing.created_at as string) || new Date().toISOString(),
@@ -268,6 +330,38 @@ export async function getDeals(): Promise<Deal[]> {
       });
     }
 
+    // Fallback: generate deals from top listings (highest discount %)
+    const allListings = await getListings();
+    const withDiscounts = allListings
+      .filter((l) => l.original_price != null && l.original_price > l.current_price)
+      .sort((a, b) => {
+        const discA = ((a.original_price ?? 0) - a.current_price) / (a.original_price ?? 1);
+        const discB = ((b.original_price ?? 0) - b.current_price) / (b.original_price ?? 1);
+        return discB - discA;
+      })
+      .slice(0, 6);
+
+    if (withDiscounts.length > 0) {
+      const endDate = new Date();
+      endDate.setDate(endDate.getDate() + 7);
+      return withDiscounts.map((listing, i) => ({
+        id: `auto-deal-${listing.id}`,
+        listing_id: listing.id,
+        deal_type: "flash_sale" as const,
+        discount_percentage: Math.round((((listing.original_price ?? 0) - listing.current_price) / (listing.original_price ?? 1)) * 100),
+        original_price: listing.original_price ?? listing.current_price,
+        deal_price: listing.current_price,
+        quantity_available: null,
+        quantity_sold: 0,
+        starts_at: new Date().toISOString(),
+        ends_at: endDate.toISOString(),
+        is_active: true,
+        priority: withDiscounts.length - i,
+        created_at: new Date().toISOString(),
+        listing,
+      } as Deal));
+    }
+
     return [];
   } catch {
     return [];
@@ -381,12 +475,16 @@ function getCategoryIcon(name: string): string {
   const iconMap: Record<string, string> = {
     "Electronics": "Smartphone",
     "Home & Kitchen": "Home",
-    "Fashion": "Shirt",
+    "Fashion & Clothing": "Shirt",
     "Beauty & Health": "Heart",
-    "Sports & Outdoors": "Dumbbell",
+    "Sports & Fitness": "Dumbbell",
     "Toys & Games": "Gamepad2",
     "Automotive": "Car",
-    "Garden & DIY": "Flower2",
+    "Garden & Outdoor": "Flower2",
+    "Baby & Kids": "Baby",
+    "Pet Supplies": "Heart",
+    "Tools & Hardware": "Wrench",
+    "Office & Stationery": "BookOpen",
   };
   return iconMap[name] || "Package";
 }

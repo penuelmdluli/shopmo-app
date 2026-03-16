@@ -71,19 +71,25 @@ export function ProductCard({ listing, className }: ProductCardProps) {
           {listing.title}
         </Link>
 
-        {/* Rating */}
-        <div className="flex items-center gap-1 mb-2">
-          <div className="flex">
-            {[1, 2, 3, 4, 5].map((star) => (
-              <Star
-                key={star}
-                size={12}
-                className={star <= Math.round(listing.rating_average) ? "text-yellow-400 fill-yellow-400" : "text-gray-200"}
-              />
-            ))}
+        {/* Rating — only show when reviews exist */}
+        {listing.rating_count > 0 ? (
+          <div className="flex items-center gap-1 mb-2">
+            <div className="flex">
+              {[1, 2, 3, 4, 5].map((star) => (
+                <Star
+                  key={star}
+                  size={12}
+                  className={star <= Math.round(listing.rating_average) ? "text-yellow-400 fill-yellow-400" : "text-gray-200"}
+                />
+              ))}
+            </div>
+            <span className="text-xs text-muted-foreground">({listing.rating_count})</span>
           </div>
-          <span className="text-xs text-muted-foreground">({listing.rating_count})</span>
-        </div>
+        ) : (
+          <div className="flex items-center gap-1 mb-2">
+            <span className="text-xs text-muted-foreground">New Arrival</span>
+          </div>
+        )}
 
         {/* Price */}
         <div className="mt-auto">

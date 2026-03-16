@@ -1,6 +1,6 @@
 import type { Metadata } from "next";
 import Link from "next/link";
-import { Search, Package, RotateCcw, CreditCard, User, Mail, Phone } from "lucide-react";
+import { Search, Package, RotateCcw, CreditCard, User, Mail } from "lucide-react";
 
 export const metadata: Metadata = {
   title: "Help Centre",
@@ -87,11 +87,11 @@ export default function HelpPage() {
             support@shopmoo.co.za
           </a>
           <a
-            href="tel:+27792572466"
+            href="/contact"
             className="flex items-center gap-2 px-6 py-3 border border-gray-300 text-gray-700 font-medium rounded-lg hover:bg-white transition-colors"
           >
-            <Phone size={18} />
-            079 257 2466
+            <Mail size={18} />
+            Contact Form
           </a>
         </div>
       </div>

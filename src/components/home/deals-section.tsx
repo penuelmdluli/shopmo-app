@@ -19,15 +19,23 @@ export function DealsSection({ deals }: DealsSectionProps) {
       {deals.map((deal) => {
         const listing = deal.listing;
         if (!listing) return null;
-        const soldPercent = deal.quantity_available
-          ? Math.round((deal.quantity_sold / deal.quantity_available) * 100)
+        const quantitySold = deal.quantity_sold ?? 0;
+        const quantityAvail = deal.quantity_available ?? 0;
+        const soldPercent = quantityAvail > 0
+          ? Math.round((quantitySold / quantityAvail) * 100)
           : 0;
+        const dealType = deal.deal_type || "flash_sale";
+        const discountPct = deal.discount_percentage ?? (
+          deal.original_price > 0
+            ? Math.round(((deal.original_price - deal.deal_price) / deal.original_price) * 100)
+            : 0
+        );
 
         return (
           <div key={deal.id} className="bg-white rounded-xl border border-border p-4 hover:shadow-lg transition-shadow">
             <div className="flex items-center justify-between mb-3">
               <span className="text-xs font-semibold bg-red-100 text-red-700 px-2 py-1 rounded-full uppercase">
-                {deal.deal_type.replace("_", " ")}
+                {dealType.replace("_", " ")}
               </span>
               <CountdownTimer endsAt={deal.ends_at} />
             </div>
@@ -51,26 +59,28 @@ export function DealsSection({ deals }: DealsSectionProps) {
             <div className="flex items-center gap-2 mb-2">
               <span className="text-lg font-bold text-foreground">{formatCurrency(deal.deal_price)}</span>
               <span className="text-sm text-muted-foreground line-through">{formatCurrency(deal.original_price)}</span>
-              {deal.discount_percentage && (
+              {discountPct > 0 && (
                 <span className="text-xs bg-red-100 text-red-700 px-1.5 py-0.5 rounded-full font-semibold">
-                  -{deal.discount_percentage}%
+                  -{discountPct}%
                 </span>
               )}
             </div>
 
             {/* Stock bar */}
-            <div className="mb-3">
-              <div className="flex justify-between text-xs text-muted-foreground mb-1">
-                <span>{deal.quantity_sold} sold</span>
-                <span>{(deal.quantity_available || 0) - deal.quantity_sold} left</span>
+            {quantityAvail > 0 && (
+              <div className="mb-3">
+                <div className="flex justify-between text-xs text-muted-foreground mb-1">
+                  <span>{quantitySold} sold</span>
+                  <span>{quantityAvail - quantitySold} left</span>
+                </div>
+                <div className="h-2 bg-gray-200 rounded-full overflow-hidden">
+                  <div
+                    className="h-full bg-secondary rounded-full transition-all"
+                    style={{ width: `${Math.min(soldPercent, 100)}%` }}
+                  />
+                </div>
               </div>
-              <div className="h-2 bg-gray-200 rounded-full overflow-hidden">
-                <div
-                  className="h-full bg-secondary rounded-full transition-all"
-                  style={{ width: `${Math.min(soldPercent, 100)}%` }}
-                />
-              </div>
-            </div>
+            )}
 
             <button
               onClick={() => addItem(listing)}

@@ -1,0 +1,29 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 600 400" width="600" height="400">
+  <defs>
+    <linearGradient id="bg" x1="0%" y1="0%" x2="100%" y2="100%">
+      <stop offset="0%" stop-color="#ecfeff"/>
+      <stop offset="100%" stop-color="#cffafe"/>
+    </linearGradient>
+  </defs>
+  <rect width="600" height="400" rx="16" fill="url(#bg)"/>
+  <!-- Car icon -->
+  <g transform="translate(225, 80)">
+    <path d="M20 70 L20 50 C20 45 25 40 30 40 L40 10 C42 4 48 0 55 0 L95 0 C102 0 108 4 110 10 L120 40 C125 40 130 45 130 50 L130 70 C130 75 126 80 120 80 L30 80 C25 80 20 75 20 70Z" fill="#0891b2" fill-opacity="0.12" stroke="#0891b2" stroke-width="5" stroke-linejoin="round"/>
+    <!-- Windows -->
+    <path d="M48 15 L42 40 L72 40 L72 15 Z" fill="#0891b2" fill-opacity="0.15" stroke="#0891b2" stroke-width="2"/>
+    <path d="M78 15 L78 40 L108 40 L102 15 Z" fill="#0891b2" fill-opacity="0.15" stroke="#0891b2" stroke-width="2"/>
+    <!-- Wheels -->
+    <circle cx="45" cy="85" r="14" fill="white" stroke="#0891b2" stroke-width="5"/>
+    <circle cx="45" cy="85" r="5" fill="#0891b2"/>
+    <circle cx="105" cy="85" r="14" fill="white" stroke="#0891b2" stroke-width="5"/>
+    <circle cx="105" cy="85" r="5" fill="#0891b2"/>
+    <!-- Headlights -->
+    <rect x="125" y="50" width="10" height="8" rx="3" fill="#0891b2" fill-opacity="0.5"/>
+    <rect x="15" y="50" width="10" height="8" rx="3" fill="#0891b2" fill-opacity="0.5"/>
+  </g>
+  <text x="300" y="280" font-family="system-ui, -apple-system, 'Segoe UI', sans-serif" font-size="28" font-weight="700" fill="#0e7490" text-anchor="middle">Automotive</text>
+  <text x="300" y="310" font-family="system-ui, -apple-system, 'Segoe UI', sans-serif" font-size="16" font-weight="400" fill="#0891b2" fill-opacity="0.7" text-anchor="middle">Parts, Accessories &amp; Care</text>
+  <circle cx="280" cy="340" r="3" fill="#0891b2" fill-opacity="0.3"/>
+  <circle cx="300" cy="340" r="3" fill="#0891b2" fill-opacity="0.3"/>
+  <circle cx="320" cy="340" r="3" fill="#0891b2" fill-opacity="0.3"/>
+</svg>

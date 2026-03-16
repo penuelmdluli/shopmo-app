@@ -59,6 +59,7 @@ export default function CheckoutPage() {
   // Address state
   const [address, setAddress] = useState({
     full_name: "",
+    email: "",
     phone: "",
     street_address: "",
     suburb: "",
@@ -72,7 +73,7 @@ export default function CheckoutPage() {
   const [selectedShipping, setSelectedShipping] = useState("standard");
 
   // Payment state
-  const [selectedPayment, setSelectedPayment] = useState("payfast_card");
+  const [selectedPayment, setSelectedPayment] = useState("yoco_card");
 
   const [errors, setErrors] = useState<Record<string, string>>({});
   const [isPlacingOrder, setIsPlacingOrder] = useState(false);
@@ -85,6 +86,8 @@ export default function CheckoutPage() {
   const validateAddress = () => {
     const newErrors: Record<string, string> = {};
     if (!address.full_name.trim()) newErrors.full_name = "Required";
+    if (!address.email.trim()) newErrors.email = "Required";
+    else if (!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(address.email)) newErrors.email = "Invalid email";
     if (!address.phone.trim()) newErrors.phone = "Required";
     if (!address.street_address.trim()) newErrors.street_address = "Required";
     if (!address.city.trim()) newErrors.city = "Required";
@@ -303,6 +306,20 @@ export default function CheckoutPage() {
                     {errors.phone && <p className="text-xs text-red-500 mt-1">{errors.phone}</p>}
                   </div>
                   <div className="sm:col-span-2">
+                    <label className="block text-sm font-medium text-gray-700 mb-1">Email Address *</label>
+                    <input
+                      type="email"
+                      value={address.email}
+                      onChange={(e) => handleAddressChange("email", e.target.value)}
+                      placeholder="For order confirmation & tracking updates"
+                      className={cn(
+                        "w-full px-3 py-2.5 border rounded-lg focus:ring-2 focus:ring-primary/20 focus:border-primary outline-none",
+                        errors.email ? "border-red-400" : "border-gray-300"
+                      )}
+                    />
+                    {errors.email && <p className="text-xs text-red-500 mt-1">{errors.email}</p>}
+                  </div>
+                  <div className="sm:col-span-2">
                     <label className="block text-sm font-medium text-gray-700 mb-1">Street Address *</label>
                     <input
                       type="text"
@@ -503,6 +520,7 @@ export default function CheckoutPage() {
                 </div>
                 <p className="text-sm text-gray-600">
                   {address.full_name}<br />
+                  {address.email}<br />
                   {address.street_address}
                   {address.suburb && <>, {address.suburb}</>}<br />
                   {address.city}, {address.province}, {address.postal_code}

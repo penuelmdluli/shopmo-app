@@ -110,7 +110,7 @@ export function RecentPurchaseToast() {
 
 // Stock urgency badge
 export function StockUrgency({ stock }: { stock: number }) {
-  if (stock > 20) return null;
+  if (stock <= 0 || stock > 20) return null;
 
   const isLow = stock <= 5;
   const isMedium = stock <= 10;

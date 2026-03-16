@@ -1,0 +1,17 @@
+{
+  "name": "ShopMO",
+  "short_name": "ShopMO",
+  "description": "South Africa's Smartest Online Store",
+  "start_url": "/",
+  "display": "standalone",
+  "theme_color": "#0891b2",
+  "background_color": "#ffffff",
+  "icons": [
+    {
+      "src": "/icon.svg",
+      "sizes": "any",
+      "type": "image/svg+xml",
+      "purpose": "any maskable"
+    }
+  ]
+}

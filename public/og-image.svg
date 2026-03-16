@@ -1,0 +1,45 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 1200 630" width="1200" height="630">
+  <defs>
+    <linearGradient id="bg" x1="0%" y1="0%" x2="100%" y2="100%">
+      <stop offset="0%" stop-color="#0891b2"/>
+      <stop offset="50%" stop-color="#0a7d9e"/>
+      <stop offset="100%" stop-color="#0e7490"/>
+    </linearGradient>
+    <linearGradient id="shine" x1="0%" y1="0%" x2="0%" y2="100%">
+      <stop offset="0%" stop-color="white" stop-opacity="0.08"/>
+      <stop offset="100%" stop-color="white" stop-opacity="0"/>
+    </linearGradient>
+  </defs>
+  <!-- Background -->
+  <rect width="1200" height="630" fill="url(#bg)"/>
+  <rect width="1200" height="315" fill="url(#shine)"/>
+  <!-- Subtle grid pattern -->
+  <pattern id="grid" width="60" height="60" patternUnits="userSpaceOnUse">
+    <path d="M 60 0 L 0 0 0 60" fill="none" stroke="white" stroke-opacity="0.04" stroke-width="1"/>
+  </pattern>
+  <rect width="1200" height="630" fill="url(#grid)"/>
+  <!-- Shopping bag icon (subtle, behind text) -->
+  <g transform="translate(530, 100)" opacity="0.12">
+    <path d="M70 40 L70 20 C70 8.954 78.954 0 90 0 L50 0 C61.046 0 70 8.954 70 20 L70 40 Z" fill="none" stroke="white" stroke-width="5" transform="translate(-1, 0)"/>
+    <rect x="20" y="40" width="100" height="90" rx="8" fill="none" stroke="white" stroke-width="5"/>
+    <path d="M50 40 V20 C50 11 58 4 70 4 C82 4 90 11 90 20 V40" fill="none" stroke="white" stroke-width="5"/>
+  </g>
+  <!-- ShopMO text -->
+  <text x="600" y="310" font-family="system-ui, -apple-system, 'Segoe UI', sans-serif" font-size="120" font-weight="800" fill="white" text-anchor="middle" letter-spacing="-2">ShopMO</text>
+  <!-- Tagline -->
+  <text x="600" y="380" font-family="system-ui, -apple-system, 'Segoe UI', sans-serif" font-size="32" font-weight="400" fill="white" fill-opacity="0.85" text-anchor="middle" letter-spacing="2">South Africa's Smartest Online Store</text>
+  <!-- Accent line -->
+  <rect x="480" y="410" width="240" height="3" rx="1.5" fill="white" fill-opacity="0.4"/>
+  <!-- Bottom decorative dots -->
+  <circle cx="560" cy="460" r="4" fill="white" fill-opacity="0.3"/>
+  <circle cx="585" cy="460" r="4" fill="white" fill-opacity="0.3"/>
+  <circle cx="610" cy="460" r="4" fill="white" fill-opacity="0.3"/>
+  <circle cx="635" cy="460" r="4" fill="white" fill-opacity="0.3"/>
+  <!-- SA flag colors accent bar at bottom -->
+  <rect x="0" y="618" width="200" height="12" fill="#007749"/>
+  <rect x="200" y="618" width="200" height="12" fill="#FFB81C"/>
+  <rect x="400" y="618" width="200" height="12" fill="#DE3831"/>
+  <rect x="600" y="618" width="200" height="12" fill="#002395"/>
+  <rect x="800" y="618" width="200" height="12" fill="#007749"/>
+  <rect x="1000" y="618" width="200" height="12" fill="#FFB81C"/>
+</svg>

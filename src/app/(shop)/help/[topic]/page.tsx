@@ -162,7 +162,7 @@ const HELP_CONTENT: Record<string, { title: string; sections: { q: string; a: st
       },
       {
         q: "How do I contact support?",
-        a: "You can reach us via email at support@shopmoo.co.za, phone at 079 257 2466, or use the AI chat assistant available on every page. Our team is available Monday to Friday, 8am-5pm.",
+        a: "You can reach us via email at support@shopmoo.co.za, through our contact form at shopmoo.co.za/contact, or use the AI chat assistant available on every page. Our team is available Monday to Friday, 8am-5pm.",
       },
       {
         q: "Do products come with warranty?",

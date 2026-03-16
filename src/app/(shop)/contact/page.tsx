@@ -2,7 +2,7 @@
 
 import { useState } from "react";
 import Link from "next/link";
-import { ArrowLeft, Mail, Phone, MapPin, Send, CheckCircle } from "lucide-react";
+import { ArrowLeft, Mail, MapPin, Send, CheckCircle, MessageCircle } from "lucide-react";
 
 export default function ContactPage() {
   const [form, setForm] = useState({ name: "", email: "", subject: "", message: "" });
@@ -59,10 +59,10 @@ export default function ContactPage() {
               </div>
             </div>
             <div className="flex items-center gap-3">
-              <div className="w-10 h-10 bg-primary/10 rounded-lg flex items-center justify-center"><Phone size={20} className="text-primary" /></div>
+              <div className="w-10 h-10 bg-primary/10 rounded-lg flex items-center justify-center"><MessageCircle size={20} className="text-primary" /></div>
               <div>
-                <p className="font-medium text-gray-900">Phone</p>
-                <a href="tel:+27792572466" className="text-sm text-primary hover:underline">079 257 2466</a>
+                <p className="font-medium text-gray-900">Live Chat</p>
+                <p className="text-sm text-gray-600">Use our AI assistant on any page</p>
               </div>
             </div>
             <div className="flex items-center gap-3">

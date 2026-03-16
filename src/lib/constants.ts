@@ -3,14 +3,18 @@ export const SITE_DESCRIPTION = "South Africa's smartest online store. Trending 
 export const SITE_URL = process.env.NEXT_PUBLIC_APP_URL || "https://shopmoo.co.za";
 
 export const CATEGORIES = [
-  { name: "Electronics", slug: "electronics", icon: "Smartphone", image: "/images/categories/electronics.jpg" },
-  { name: "Home & Kitchen", slug: "home-kitchen", icon: "Home", image: "/images/categories/home.jpg" },
-  { name: "Fashion", slug: "fashion", icon: "Shirt", image: "/images/categories/fashion.jpg" },
-  { name: "Beauty & Health", slug: "beauty-health", icon: "Heart", image: "/images/categories/beauty.jpg" },
-  { name: "Sports & Outdoors", slug: "sports-outdoors", icon: "Dumbbell", image: "/images/categories/sports.jpg" },
-  { name: "Toys & Games", slug: "toys-games", icon: "Gamepad2", image: "/images/categories/toys.jpg" },
-  { name: "Automotive", slug: "automotive", icon: "Car", image: "/images/categories/auto.jpg" },
-  { name: "Garden & DIY", slug: "garden-diy", icon: "Flower2", image: "/images/categories/garden.jpg" },
+  { name: "Electronics", slug: "electronics", icon: "Smartphone", image: "/images/categories/electronics.svg" },
+  { name: "Home & Kitchen", slug: "home-kitchen", icon: "Home", image: "/images/categories/home.svg" },
+  { name: "Fashion & Clothing", slug: "fashion-clothing", icon: "Shirt", image: "/images/categories/fashion.svg" },
+  { name: "Beauty & Health", slug: "beauty-health", icon: "Heart", image: "/images/categories/beauty.svg" },
+  { name: "Sports & Fitness", slug: "sports-fitness", icon: "Dumbbell", image: "/images/categories/sports.svg" },
+  { name: "Toys & Games", slug: "toys-games", icon: "Gamepad2", image: "/images/categories/toys.svg" },
+  { name: "Automotive", slug: "automotive", icon: "Car", image: "/images/categories/auto.svg" },
+  { name: "Garden & Outdoor", slug: "garden-outdoor", icon: "Flower2", image: "/images/categories/garden.svg" },
+  { name: "Baby & Kids", slug: "baby-kids", icon: "Baby", image: "/images/categories/toys.svg" },
+  { name: "Pet Supplies", slug: "pet-supplies", icon: "Heart", image: "/images/categories/home.svg" },
+  { name: "Tools & Hardware", slug: "tools-hardware", icon: "Wrench", image: "/images/categories/garden.svg" },
+  { name: "Office & Stationery", slug: "office-stationery", icon: "BookOpen", image: "/images/categories/electronics.svg" },
 ] as const;
 
 export const VALUE_PROPOSITIONS = [
@@ -21,18 +25,14 @@ export const VALUE_PROPOSITIONS = [
 ] as const;
 
 export const SHIPPING_PROVIDERS = [
-  { id: "bobgo", name: "Bob Go", type: "aggregator" },
-  { id: "pargo", name: "Pargo", type: "pickup" },
   { id: "courier_guy", name: "The Courier Guy", type: "direct" },
-  { id: "fastway", name: "Fastway", type: "direct" },
-  { id: "aramex", name: "Aramex", type: "international" },
 ] as const;
 
 export const PAYMENT_METHODS = [
-  { id: "payfast_card", name: "Credit/Debit Card", provider: "payfast", icon: "CreditCard" },
-  { id: "payfast_eft", name: "EFT Payment", provider: "payfast", icon: "Building2" },
-  { id: "ozow", name: "Instant EFT", provider: "ozow", icon: "Zap" },
-  { id: "payfast_snapscan", name: "SnapScan", provider: "payfast", icon: "QrCode" },
+  { id: "yoco_card", name: "Credit/Debit Card", provider: "yoco", icon: "CreditCard" },
+  { id: "yoco_eft", name: "EFT Payment", provider: "yoco", icon: "Building2" },
+  { id: "yoco_apple", name: "Apple Pay", provider: "yoco", icon: "Zap" },
+  { id: "yoco_snapscan", name: "SnapScan", provider: "yoco", icon: "QrCode" },
 ] as const;
 
 export const ORDER_STATUSES = {
