@@ -35,6 +35,8 @@ const INTERNAL_ATTRIBUTE_KEYS = new Set([
   "supplier_price", "estimated_margin", "margin", "cost_price",
   "ai_analysis", "ai_score", "discovery_source", "source_url",
   "profit_margin", "supplier", "supplier_name", "supplier_url",
+  "supplier_locations", "discovery_date", "rules_score", "demand_indicators",
+  "risk_level", "recommendation", "market_analysis", "pricing_strategy",
 ]);
 
 function sanitizeAttributes(attrs: Record<string, unknown>): Record<string, string> {
