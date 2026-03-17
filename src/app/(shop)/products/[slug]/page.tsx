@@ -198,20 +198,37 @@ export default async function ProductPage({ params }: ProductPageProps) {
           "profit_margin", "supplier", "supplier_name", "supplier_url",
         ]);
         const filtered = Object.entries(attributes).filter(
-          ([key]) => !internalKeys.has(key) && !key.startsWith("_")
+          ([key, value]) => !internalKeys.has(key) && !key.startsWith("_") && value !== null && value !== undefined
         );
-        return filtered.length > 0 ? (
+        // Safely render attribute values — skip objects/arrays that can't be rendered as text
+        const renderValue = (value: unknown): string => {
+          if (typeof value === "string") return value;
+          if (typeof value === "number" || typeof value === "boolean") return String(value);
+          if (Array.isArray(value)) return value.map(v => typeof v === "object" ? JSON.stringify(v) : String(v)).join(", ");
+          if (typeof value === "object" && value !== null) {
+            // Try to extract a meaningful string from common object shapes
+            const obj = value as Record<string, unknown>;
+            if (obj.name) return String(obj.name);
+            return Object.entries(obj).map(([k, v]) => `${k}: ${typeof v === "object" ? JSON.stringify(v) : String(v)}`).join(", ");
+          }
+          return String(value);
+        };
+        const safeFiltered = filtered.filter(([, value]) => {
+          const rendered = renderValue(value);
+          return rendered.length > 0 && rendered !== "undefined" && rendered !== "null";
+        });
+        return safeFiltered.length > 0 ? (
           <section className="mb-12">
             <h2 className="text-xl font-bold text-foreground mb-4">Specifications</h2>
             <div className="bg-white border border-border rounded-xl overflow-hidden">
               <table className="w-full text-sm">
                 <tbody>
-                  {filtered.map(([key, value], i) => (
+                  {safeFiltered.map(([key, value], i) => (
                     <tr key={key} className={i % 2 === 0 ? "bg-gray-50" : "bg-white"}>
                       <td className="px-4 py-3 font-medium text-foreground w-1/3 capitalize">
                         {key.replace(/_/g, " ")}
                       </td>
-                      <td className="px-4 py-3 text-muted-foreground">{value}</td>
+                      <td className="px-4 py-3 text-muted-foreground">{renderValue(value)}</td>
                     </tr>
                   ))}
                 </tbody>

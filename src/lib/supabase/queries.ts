@@ -37,11 +37,20 @@ const INTERNAL_ATTRIBUTE_KEYS = new Set([
   "profit_margin", "supplier", "supplier_name", "supplier_url",
 ]);
 
-function sanitizeAttributes(attrs: Record<string, string>): Record<string, string> {
+function sanitizeAttributes(attrs: Record<string, unknown>): Record<string, string> {
   const clean: Record<string, string> = {};
   for (const [key, value] of Object.entries(attrs)) {
     if (!INTERNAL_ATTRIBUTE_KEYS.has(key) && !key.startsWith("_")) {
-      clean[key] = value;
+      // Only include primitive values that can be safely rendered as text
+      if (typeof value === "string") {
+        clean[key] = value;
+      } else if (typeof value === "number" || typeof value === "boolean") {
+        clean[key] = String(value);
+      } else if (Array.isArray(value)) {
+        const flat = value.map(v => typeof v === "object" ? JSON.stringify(v) : String(v)).join(", ");
+        if (flat) clean[key] = flat;
+      }
+      // Skip objects (like {name, type, hours, notes, websiteUrl}) — they crash React rendering
     }
   }
   return clean;
