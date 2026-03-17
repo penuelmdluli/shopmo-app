@@ -17,7 +17,9 @@
     "SHOPMO_WAREHOUSE_CITY": "Pretoria",
     "SHOPMO_WAREHOUSE_PROVINCE": "Gauteng",
     "SHOPMO_WAREHOUSE_POSTAL": "0001",
-    "OWNER_EMAIL": "mdlulipenuel@gmail.com"
+    "OWNER_EMAIL": "mdlulipenuel@gmail.com",
+    "NEXT_PUBLIC_FB_PIXEL_ID": "1412633423986581",
+    "NEXT_PUBLIC_GA_MEASUREMENT_ID": "G-QR48X6NHCM"
   },
   // Secrets to set via: npx wrangler secret put <NAME>
   // Required: SUPABASE_SERVICE_ROLE_KEY, ANTHROPIC_API_KEY, COURIER_GUY_API_KEY

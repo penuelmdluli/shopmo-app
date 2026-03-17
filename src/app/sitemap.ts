@@ -1,7 +1,7 @@
 import { MetadataRoute } from "next";
 import { getListings, getCategories } from "@/lib/supabase/queries";
 
-const SITE_URL = process.env.NEXT_PUBLIC_APP_URL || "https://shopmoo.co.za";
+const SITE_URL = "https://shopmoo.co.za";
 
 export default async function sitemap(): Promise<MetadataRoute.Sitemap> {
   const now = new Date().toISOString();
