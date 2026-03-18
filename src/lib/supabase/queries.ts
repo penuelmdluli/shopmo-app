@@ -194,7 +194,7 @@ export async function getListings(): Promise<StorefrontListing[]> {
     const { data: products, error: productsError } = await supabase
       .from("products")
       .select("*")
-      .in("status", ["approved", "live", "analyzing"])
+      .in("status", ["approved", "live"])
       .order("updated_at", { ascending: false });
 
     if (!productsError && products && products.length > 0) {

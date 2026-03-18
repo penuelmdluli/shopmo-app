@@ -1,6 +1,5 @@
 import Link from "next/link";
-import { ChevronRight, Star, CheckCircle, User, Shield, Truck, RotateCcw } from "lucide-react";
-import { notFound } from "next/navigation";
+import { ChevronRight, Star, CheckCircle, User, Shield, Truck, RotateCcw, PackageX } from "lucide-react";
 import { getListings, getListingBySlug, getReviews } from "@/lib/supabase/queries";
 import { formatDate } from "@/lib/utils";
 import { PriceDisplay } from "@/components/shared/price-display";
@@ -20,7 +19,7 @@ const SITE_URL = process.env.NEXT_PUBLIC_APP_URL || "https://shopmoo.co.za";
 export async function generateMetadata({ params }: ProductPageProps) {
   const { slug } = await params;
   const listing = await getListingBySlug(slug);
-  if (!listing) return { title: "Product Not Found" };
+  if (!listing) return { title: "Product Unavailable | ShopMO" };
   return {
     title: listing.title,
     description: listing.description,
@@ -88,7 +87,36 @@ export default async function ProductPage({ params }: ProductPageProps) {
   ]);
 
   if (!listing) {
-    notFound();
+    // Show "product unavailable" with suggested products instead of hard 404
+    const suggestedProducts = allListings.slice(0, 8);
+    return (
+      <div className="max-w-7xl mx-auto px-4 py-12">
+        <div className="text-center mb-10">
+          <div className="inline-flex items-center justify-center w-16 h-16 bg-gray-100 rounded-full mb-4">
+            <PackageX size={32} className="text-gray-400" />
+          </div>
+          <h1 className="text-2xl font-bold text-foreground mb-2">Product Unavailable</h1>
+          <p className="text-muted-foreground max-w-md mx-auto">
+            This product is no longer available or has been discontinued.
+            Check out these similar products instead!
+          </p>
+          <div className="flex gap-3 justify-center mt-6">
+            <Link href="/products" className="px-5 py-2.5 bg-primary text-white rounded-lg font-medium hover:bg-primary/90 transition-colors">
+              Browse All Products
+            </Link>
+            <Link href="/" className="px-5 py-2.5 border border-border text-foreground rounded-lg font-medium hover:bg-gray-50 transition-colors">
+              Back to Home
+            </Link>
+          </div>
+        </div>
+        {suggestedProducts.length > 0 && (
+          <section>
+            <h2 className="text-xl font-bold text-foreground mb-4">You Might Like</h2>
+            <ProductGrid listings={suggestedProducts} />
+          </section>
+        )}
+      </div>
+    );
   }
 
   const reviews = await getReviews(listing.id);
